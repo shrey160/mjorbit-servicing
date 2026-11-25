@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P7 Orbital Servicing — 5-View Replay Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0f14;
+    --panel: #121922;
+    --line: #233040;
+    --fg: #dfe7ef;
+    --muted: #8a9aab;
+    --accent: #f0b429;
+    --ok: #4fd18b;
+    --abort: #ff6b5b;
+    --cyan: #58c4ff;
+    --display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+    --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.45;
+    padding: 18px 20px 28px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+  header {
+    display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: end; justify-content: space-between;
+  }
+  h1 {
+    font-family: var(--display); font-weight: 700; font-size: clamp(22px, 3vw, 32px);
+    letter-spacing: 0.01em; margin: 0;
+  }
+  .sub { color: var(--muted); margin: 3px 0 0; max-width: 78ch; }
+  .badge {
+    font-family: var(--mono); font-size: 12px; padding: 5px 10px;
+    border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+  }
+  .badge.ok { border-color: var(--ok); color: var(--ok); }
+  .badge.err { border-color: var(--abort); color: var(--abort); }
+
+  /* Core 5-square stage: left (2 stacked squares) | center (1 large square) | right (2 stacked squares) */
+  .stage-grid {
+    display: grid;
+    grid-template-columns: minmax(190px, 260px) minmax(380px, 534px) minmax(190px, 260px);
+    gap: 14px;
+    justify-content: center;
+    align-items: center;
+  }
+  .side-col {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 14px;
+  }
+  .cam-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #05080c;
+  }
+  .cam-card.center {
+    border-color: #314357;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+  .cam-card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: auto;
+  }
+  .cam-card.lidar img { image-rendering: pixelated; }
+  .cam-label {
+    position: absolute; left: 8px; top: 8px; pointer-events: none;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em;
+    background: rgba(11, 15, 20, 0.80); border: 1px solid var(--line);
+    border-radius: 4px; padding: 2px 7px; color: var(--fg);
+  }
+  .hud {
+    position: absolute; right: 10px; top: 10px; display: grid; gap: 5px; pointer-events: none;
+    font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right;
+  }
+  .hud .row {
+    background: rgba(11, 15, 20, 0.80); border: 1px solid var(--line);
+    border-radius: 5px; padding: 4px 8px;
+  }
+  .chip {
+    display: inline-block; padding: 1px 7px; border-radius: 999px; font-weight: 600;
+    color: #0b0f14; background: var(--accent); margin-left: 6px;
+  }
+
+  /* Transport & Timeline Bar */
+  .bar {
+    display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .ctl { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  button {
+    font: 500 13.5px/1 var(--body); color: var(--fg); background: #18222e; border: 1px solid var(--line);
+    border-radius: 6px; padding: 8px 12px; cursor: pointer;
+  }
+  button:hover { border-color: #3a5068; }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .seg { display: inline-flex; gap: 4px; }
+  .seg button { padding: 7px 9px; font-size: 12.5px; font-family: var(--mono); }
+  #time-readout { font-family: var(--mono); font-variant-numeric: tabular-nums; min-width: 15ch; color: var(--fg); }
+  .timeline { position: relative; height: 34px; user-select: none; }
+  .phases { position: absolute; inset: 0 0 14px 0; display: flex; border-radius: 4px; overflow: hidden; background: #090d12; }
+  .phases span { height: 100%; opacity: 0.78; border-right: 1px solid rgba(11,15,20,0.65); }
+  .head { position: absolute; top: -3px; width: 2px; height: 26px; background: #fff; pointer-events: none; }
+  .ticks {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 12px;
+    font: 10.5px/12px var(--mono); color: var(--muted); display: flex; justify-content: space-between;
+  }
+  #scrub { position: absolute; inset: 0 0 14px 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
+
+  .metrics {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 10px;
+  }
+  .metric-box {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  }
+  .metric-box .k { font-family: var(--display); text-transform: uppercase; font-size: 12px; letter-spacing: 0.04em; color: var(--muted); }
+  .metric-box .v { font-family: var(--mono); font-size: 15px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+  /* Interactive Time Inspector */
+  .inspector {
+    display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .insp-head {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between;
+  }
+  .insp-title {
+    font-family: var(--display); text-transform: uppercase; font-size: 13px;
+    letter-spacing: 0.05em; color: var(--fg); font-weight: 600;
+  }
+  .insp-controls { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  .insp-controls label { font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+  .insp-controls input[type="number"] {
+    width: 82px; font: 500 12.5px/1.2 var(--mono); color: var(--fg); background: #0b0f14;
+    border: 1px solid var(--line); border-radius: 5px; padding: 5px 7px;
+  }
+  .insp-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+  .insp-pills button { padding: 5px 8px; font: 500 11.5px/1 var(--mono); }
+  .insp-canvas-wrap {
+    position: relative; width: 100%; height: 190px; background: #070b10;
+    border: 1px solid var(--line); border-radius: 6px; overflow: hidden; cursor: crosshair;
+  }
+  #inspector-canvas { display: block; width: 100%; height: 100%; }
+  .insp-legend {
+    display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; align-items: center;
+    font: 11.5px/1.3 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .insp-legend .keys { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+
+  /* Interactive 3D Viewport */
+  .view3d-wrap {
+    position: relative; width: 100%; height: 420px; background: #04070b;
+    border: 1px solid var(--line); border-radius: 6px; overflow: hidden; cursor: grab;
+  }
+  .view3d-wrap:active { cursor: grabbing; }
+  #view3d-canvas { display: block; width: 100%; height: 100%; }
+  .view3d-hud {
+    position: absolute; left: 10px; bottom: 10px; pointer-events: none;
+    font: 11.5px/1.3 var(--mono); color: var(--muted);
+    background: rgba(11, 15, 20, 0.78); border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px;
+  }
+
+  @media (max-width: 900px) {
+    .stage-grid { grid-template-columns: 1fr 1fr; }
+    .cam-card.center { grid-column: 1 / -1; order: -1; max-width: 534px; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>P7 Unprepared Client — Orbital Mission Replay</h1>
+      <p class="sub" id="subtitle">Loading mission replay manifest...</p>
+    </div>
+    <span class="badge" id="status-badge">loading...</span>
+  </header>
+
+  <main class="stage-grid" aria-label="5-view synchronized orbital mission replay">
+    <div class="side-col">
+      <div class="cam-card lidar">
+        <img id="img-lidar" alt="Bus LiDAR range view">
+        <span class="cam-label">BUS LiDAR (range)</span>
+      </div>
+      <div class="cam-card">
+        <img id="img-bus" alt="Bus optical camera view">
+        <span class="cam-label">BUS CAM (optical)</span>
+      </div>
+    </div>
+
+    <div class="cam-card center">
+      <img id="img-third" alt="3rd-person orbital view with Earth limb">
+      <span class="cam-label">3RD-PERSON ORBIT VIEW (550 km LEO)</span>
+      <div class="hud" aria-live="polite">
+        <div class="row">t = <span id="hud-t">0.0 s</span><span class="chip" id="hud-phase">init</span></div>
+        <div class="row">range: <span id="hud-r">-- m</span></div>
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div class="cam-card">
+        <img id="img-stereo-l" alt="Wrist stereo left camera view">
+        <span class="cam-label">WRIST STEREO L</span>
+      </div>
+      <div class="cam-card">
+        <img id="img-stereo-r" alt="Wrist stereo right camera view">
+        <span class="cam-label">WRIST STEREO R</span>
+      </div>
+    </div>
+  </main>
+
+  <section class="bar">
+    <div class="ctl">
+      <button id="btn-play" aria-label="Play or pause">▶ Play</button>
+      <button id="btn-prev" aria-label="Previous frame">◀ Prev</button>
+      <button id="btn-next" aria-label="Next frame">Next ▶</button>
+      <span id="time-readout">0.0 / 0.0 s</span>
+      <span style="color:var(--muted); margin-left:4px">Play rate:</span>
+      <span class="seg" id="speed-btns" role="group" aria-label="Playback frame rate">
+        <button data-fps="4">4 fps</button>
+        <button data-fps="12" aria-pressed="true">12 fps</button>
+        <button data-fps="25">25 fps</button>
+        <button data-fps="45">45 fps</button>
+      </span>
+    </div>
+    <div class="timeline">
+      <div class="phases" id="phase-strip"></div>
+      <div class="head" id="playhead" style="left:0%"></div>
+      <div class="ticks" id="time-ticks"></div>
+      <input type="range" id="scrub" min="0" max="1" value="0" aria-label="Mission timeline scrubber">
+    </div>
+  </section>
+
+  <section class="metrics" aria-label="Live telemetry">
+    <div class="metric-box"><div class="k">Phase &amp; Frame</div><div class="v" id="m-phase">--</div></div>
+    <div class="metric-box"><div class="k">Propellant / Wheel Fill</div><div class="v" id="m-bus">--</div></div>
+    <div class="metric-box"><div class="k">Pad Touches [N] (P / In / H / L)</div><div class="v" id="m-touch">--</div></div>
+    <div class="metric-box"><div class="k">Outcome &amp; Collisions</div><div class="v" id="m-outcome">--</div></div>
+  </section>
+
+  <section class="inspector" aria-label="Interactive time-series inspector">
+    <div class="insp-head">
+      <span class="insp-title">Interactive Time Inspector (Click / Drag Chart to Inspect Any Timestamp)</span>
+      <div class="insp-controls">
+        <label>Jump to t (s):
+          <input type="number" id="jump-t" step="0.1" min="0" placeholder="1371.7">
+        </label>
+        <button id="btn-jump-t">Go</button>
+        <span class="seg" id="zoom-btns" role="group" aria-label="Inspector time window">
+          <button data-zoom="full" aria-pressed="true">Full Mission</button>
+          <button data-zoom="60">±30 s</button>
+        </span>
+      </div>
+    </div>
+    <div class="insp-pills" id="phase-jumps"></div>
+    <div class="insp-canvas-wrap">
+      <canvas id="inspector-canvas"></canvas>
+    </div>
+    <div class="insp-legend">
+      <div class="keys">
+        <span><i class="dot" style="background:#58c4ff"></i>Range (m)</span>
+        <span><i class="dot" style="background:#f0b429"></i>Propellant (g)</span>
+        <span><i class="dot" style="background:#4fd18b"></i>Wheel Fill (%)</span>
+        <span><i class="dot" style="background:#ff6b5b"></i>Max Pad Touch (N)</span>
+      </div>
+      <div id="insp-hover">Hover or drag on chart to inspect telemetry at any time t</div>
+    </div>
+  </section>
+
+  <section class="inspector" aria-label="Interactive 3D orbital viewport">
+    <div class="insp-head">
+      <span class="insp-title">Interactive 3D Orbit View (Drag: Rotate · Wheel: Zoom · Right-Drag: Pan)</span>
+      <div class="insp-controls">
+        <span class="seg" id="focus-btns" role="group" aria-label="3D camera focus target">
+          <button data-focus="mid" aria-pressed="true">Midpoint</button>
+          <button data-focus="client">Client</button>
+          <button data-focus="chaser">Servicer</button>
+          <button data-focus="tool">Ring / Tool</button>
+        </span>
+        <button id="btn-3d-zoom-in" title="Zoom In">+</button>
+        <button id="btn-3d-zoom-out" title="Zoom Out">−</button>
+        <button id="btn-3d-reset">Reset View</button>
+      </div>
+    </div>
+    <div class="view3d-wrap" id="view3d-wrap">
+      <canvas id="view3d-canvas"></canvas>
+      <div class="view3d-hud" id="view3d-hud">Loading 3D scene...</div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const BASE = new URLSearchParams(location.search).get("dir") || "../../runs/replay_p7_earth";
+  const PHASE_COLORS = {
+    far_hold: "#355c7d", far_app: "#2f749c", unfold: "#5289b5",
+    acq8: "#4c956c", xfer_to_hold3: "#2a9d8f", pull_in3: "#6ab04c",
+    hold3: "#d49b28", "to1.8": "#e09f3e", "hold1.8": "#e76f51",
+    to_station: "#d95d39", settle: "#c84b31", "to pre-reach": "#b56576",
+    "to pre-close": "#9d4edd", descent: "#c77dff", close: "#e0aaff",
+    hold: "#4fd18b", detumble: "#38b000", unlock_open: "#58c4ff",
+    retract: "#4ea8de", retreat_restow: "#5390d9"
+  };
+
+  let manifest = null;
+  let idx = 0;
+  let playing = false;
+  let fps = 12;
+  let timer = null;
+  let zoomSpan = null; // null = full mission, or seconds (e.g. 60 for +/-30 s)
+  let hoverIdx = null;
+  let draggingChart = false;
+
+  const $ = id => document.getElementById(id);
+  const elL = $("img-lidar"), elB = $("img-bus"), el3 = $("img-third"), elSL = $("img-stereo-l"), elSR = $("img-stereo-r");
+  const canvas = $("inspector-canvas");
+  const ctx = canvas.getContext("2d");
+
+  function frameTouchMax(f) {
+    const tc = f.touches || {};
+    return Math.max(tc.palm || 0, tc.in || 0, tc.hook || 0, tc.lip || 0);
+  }
+
+  function nearestIdxForTime(tTarget) {
+    const frames = manifest.frames;
+    let best = 0, bestD = Infinity;
+    for (let i = 0; i < frames.length; i++) {
+      const d = Math.abs(frames[i].t - tTarget);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  function getWindowBounds() {
+    const frames = manifest.frames;
+    const t0All = frames[0].t, t1All = frames[frames.length - 1].t;
+    if (!zoomSpan) return [t0All, Math.max(t1All, t0All + 1e-3)];
+    const tc = frames[idx].t;
+    let lo = tc - 0.5 * zoomSpan, hi = tc + 0.5 * zoomSpan;
+    if (lo < t0All) { lo = t0All; hi = Math.min(t1All, t0All + zoomSpan); }
+    if (hi > t1All) { hi = t1All; lo = Math.max(t0All, t1All - zoomSpan); }
+    return [lo, Math.max(hi, lo + 1e-3)];
+  }
+
+  function drawInspector() {
+    if (!manifest || !manifest.frames.length) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth || 800, h = canvas.clientHeight || 190;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const frames = manifest.frames;
+    const [tLo, tHi] = getWindowBounds();
+    const padL = 8, padR = 8, padT = 14, padB = 20;
+    const pw = Math.max(w - padL - padR, 10), ph = Math.max(h - padT - padB, 10);
+    const xOfT = t => padL + ((t - tLo) / (tHi - tLo)) * pw;
+
+    // Phase background bands
+    for (let i = 0; i < frames.length; i++) {
+      const a = frames[i].t;
+      const b = i + 1 < frames.length ? frames[i + 1].t : a + 0.5;
+      if (b < tLo || a > tHi) continue;
+      const x0 = Math.max(padL, xOfT(a)), x1 = Math.min(padL + pw, xOfT(b));
+      ctx.fillStyle = PHASE_COLORS[frames[i].phase] || "#355c7d";
+      ctx.globalAlpha = 0.14;
+      ctx.fillRect(x0, padT, Math.max(1, x1 - x0), ph);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Horizontal grid lines
+    ctx.strokeStyle = "#1b2634";
+    ctx.lineWidth = 1;
+    for (let g = 0; g <= 4; g++) {
+      const y = padT + (g / 4) * ph;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+    }
+
+    const maxRange = Math.max(32.0, ...frames.map(f => f.range_m));
+    const maxProp = Math.max(50.0, ...frames.map(f => f.prop_g));
+    const maxTouch = Math.max(50.0, ...frames.map(frameTouchMax));
+
+    function plotSeries(valFn, maxVal, color, logScale = false) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.75;
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < frames.length; i++) {
+        const t = frames[i].t;
+        if (t < tLo - 10 || t > tHi + 10) continue;
+        const raw = Math.max(0, valFn(frames[i]));
+        const norm = logScale ? Math.log1p(raw) / Math.log1p(maxVal) : Math.min(1, raw / maxVal);
+        const x = xOfT(t), y = padT + (1.0 - norm) * ph;
+        if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+      }
+      ctx.stroke();
+    }
+
+    plotSeries(f => f.range_m, maxRange, "#58c4ff", true);
+    plotSeries(f => f.prop_g, maxProp, "#f0b429", false);
+    plotSeries(f => f.wheel_fill, 1.0, "#4fd18b", false);
+    plotSeries(frameTouchMax, maxTouch, "#ff6b5b", false);
+
+    // Time axis labels
+    ctx.fillStyle = "#8a9aab";
+    ctx.font = "10.5px 'JetBrains Mono', monospace";
+    for (let k = 0; k <= 4; k++) {
+      const tk = tLo + (k / 4) * (tHi - tLo);
+      const x = xOfT(tk);
+      ctx.textAlign = k === 0 ? "left" : (k === 4 ? "right" : "center");
+      ctx.fillText(`${tk.toFixed(zoomSpan ? 1 : 0)}s`, x, h - 5);
+    }
+
+    // Current playhead
+    const xp = xOfT(frames[idx].t);
+    if (xp >= padL && xp <= padL + pw) {
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(xp, padT); ctx.lineTo(xp, padT + ph); ctx.stroke();
+    }
+
+    // Hover crosshair
+    if (hoverIdx !== null && frames[hoverIdx]) {
+      const fh = frames[hoverIdx];
+      const xh = xOfT(fh.t);
+      if (xh >= padL && xh <= padL + pw) {
+        ctx.strokeStyle = "rgba(240, 180, 41, 0.85)";
+        ctx.setLineDash([4, 3]);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(xh, padT); ctx.lineTo(xh, padT + ph); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      const tc = fh.touches || {};
+      $("insp-hover").textContent =
+        `t=${fh.t.toFixed(1)}s · ${fh.phase} · r=${fh.range_m.toFixed(2)}m · prop=${fh.prop_g.toFixed(1)}g · rw=${(fh.wheel_fill * 100).toFixed(1)}% · touch=[${tc.palm ?? 0}/${tc.in ?? 0}/${tc.hook ?? 0}/${tc.lip ?? 0}]N`;
+    }
+  }
+
+  function showFrame(k) {
+    if (!manifest || !manifest.frames.length) return;
+    idx = Math.max(0, Math.min(manifest.frames.length - 1, k));
+    const f = manifest.frames[idx];
+    const fn = f.file;
+    el3.src = `${BASE}/frames/third/${fn}`;
+    elL.src = `${BASE}/frames/lidar/${fn}`;
+    elB.src = `${BASE}/frames/bus/${fn}`;
+    elSL.src = `${BASE}/frames/stereo_l/${fn}`;
+    elSR.src = `${BASE}/frames/stereo_r/${fn}`;
+
+    const totT = manifest.frames[manifest.frames.length - 1].t;
+    $("hud-t").textContent = `${f.t.toFixed(1)} s`;
+    $("hud-phase").textContent = f.phase;
+    $("hud-phase").style.background = PHASE_COLORS[f.phase] || "var(--accent)";
+    $("hud-r").textContent = `${f.range_m.toFixed(2)} m`;
+    $("time-readout").textContent = `${f.t.toFixed(1)} / ${totT.toFixed(1)} s`;
+    $("scrub").value = String(idx);
+    $("playhead").style.left = `${(idx / Math.max(manifest.frames.length - 1, 1)) * 100}%`;
+
+    $("m-phase").textContent = `${f.phase} (#${idx + 1}/${manifest.frames.length})`;
+    $("m-bus").textContent = `${f.prop_g.toFixed(1)} g / ${(f.wheel_fill * 100).toFixed(1)}%`;
+    const tc = f.touches || {};
+    $("m-touch").textContent = `${tc.palm ?? 0} / ${tc.in ?? 0} / ${tc.hook ?? 0} / ${tc.lip ?? 0}`;
+    $("jump-t").placeholder = f.t.toFixed(1);
+    drawInspector();
+    if (window._update3D) window._update3D(f);
+
+    // Preload next 2 frames for silky playback
+    for (let d = 1; d <= 2; d++) {
+      if (idx + d < manifest.frames.length) {
+        const nf = manifest.frames[idx + d].file;
+        for (const v of ["third", "lidar", "bus", "stereo_l", "stereo_r"]) {
+          const im = new Image();
+          im.src = `${BASE}/frames/${v}/${nf}`;
+        }
+      }
+    }
+  }
+
+  function buildPhaseStrip(frames) {
+    const strip = $("phase-strip");
+    strip.innerHTML = "";
+    const n = frames.length;
+    let i = 0;
+    while (i < n) {
+      let j = i + 1;
+      while (j < n && frames[j].phase === frames[i].phase) j++;
+      const span = document.createElement("span");
+      span.style.width = `${((j - i) / n) * 100}%`;
+      span.style.background = PHASE_COLORS[frames[i].phase] || "#455a64";
+      span.title = `${frames[i].phase} (${frames[i].t.toFixed(0)}–${frames[j - 1].t.toFixed(0)} s)`;
+      strip.appendChild(span);
+      i = j;
+    }
+    const ticks = $("time-ticks");
+    const tEnd = frames[n - 1].t;
+    ticks.innerHTML = `<span>0 s</span><span>${(0.25 * tEnd).toFixed(0)} s</span><span>${(0.5 * tEnd).toFixed(0)} s</span><span>${(0.75 * tEnd).toFixed(0)} s</span><span>${tEnd.toFixed(0)} s</span>`;
+  }
+
+  function setPlaying(on) {
+    playing = on;
+    $("btn-play").textContent = on ? "❚❚ Pause" : "▶ Play";
+    $("btn-play").setAttribute("aria-pressed", String(on));
+    if (timer) { clearInterval(timer); timer = null; }
+    if (on) {
+      timer = setInterval(() => {
+        if (idx >= manifest.frames.length - 1) showFrame(0);
+        else showFrame(idx + 1);
+      }, Math.round(1000 / fps));
+    }
+  }
+
+  $("btn-play").onclick = () => setPlaying(!playing);
+  $("btn-prev").onclick = () => { setPlaying(false); showFrame(idx - 1); };
+  $("btn-next").onclick = () => { setPlaying(false); showFrame(idx + 1); };
+  $("scrub").oninput = e => { setPlaying(false); showFrame(Number(e.target.value)); };
+
+  document.querySelectorAll("#speed-btns button").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll("#speed-btns button").forEach(b => b.setAttribute("aria-pressed", "false"));
+      btn.setAttribute("aria-pressed", "true");
+      fps = Number(btn.dataset.fps);
+      if (playing) setPlaying(true);
+    };
+  });
+
+  function buildPhaseJumps(frames) {
+    const box = $("phase-jumps");
+    box.innerHTML = "";
+    const wanted = ["far_hold", "unfold", "xfer_to_hold3", "hold3", "hold1.8", "to_station", "descent", "close", "detumble", "unlock_open", "retreat_restow"];
+    const firstOf = new Map();
+    for (let i = 0; i < frames.length; i++) {
+      if (!firstOf.has(frames[i].phase)) firstOf.set(frames[i].phase, i);
+    }
+    for (const ph of wanted) {
+      if (!firstOf.has(ph)) continue;
+      const fi = firstOf.get(ph);
+      const b = document.createElement("button");
+      b.textContent = `${ph} (${frames[fi].t.toFixed(0)}s)`;
+      b.onclick = () => { setPlaying(false); showFrame(fi); };
+      box.appendChild(b);
+    }
+  }
+
+  function idxFromCanvasEvent(ev) {
+    const rect = canvas.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (ev.clientX - rect.left - 8) / Math.max(rect.width - 16, 1)));
+    const [tLo, tHi] = getWindowBounds();
+    return nearestIdxForTime(tLo + frac * (tHi - tLo));
+  }
+
+  canvas.addEventListener("pointerdown", ev => {
+    if (!manifest) return;
+    draggingChart = true;
+    canvas.setPointerCapture(ev.pointerId);
+    setPlaying(false);
+    const k = idxFromCanvasEvent(ev);
+    hoverIdx = k;
+    showFrame(k);
+  });
+  canvas.addEventListener("pointermove", ev => {
+    if (!manifest) return;
+    const k = idxFromCanvasEvent(ev);
+    hoverIdx = k;
+    if (draggingChart) showFrame(k);
+    else drawInspector();
+  });
+  canvas.addEventListener("pointerup", () => { draggingChart = false; });
+  canvas.addEventListener("pointerleave", () => {
+    if (!draggingChart) {
+      hoverIdx = null;
+      $("insp-hover").textContent = "Hover or drag on chart to inspect telemetry at any time t";
+      drawInspector();
+    }
+  });
+  window.addEventListener("resize", () => drawInspector());
+
+  $("btn-jump-t").onclick = () => {
+    if (!manifest) return;
+    const v = parseFloat($("jump-t").value);
+    if (!Number.isFinite(v)) return;
+    setPlaying(false);
+    showFrame(nearestIdxForTime(v));
+  };
+  $("jump-t").addEventListener("keydown", ev => { if (ev.key === "Enter") $("btn-jump-t").click(); });
+
+  document.querySelectorAll("#zoom-btns button").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll("#zoom-btns button").forEach(b => b.setAttribute("aria-pressed", "false"));
+      btn.setAttribute("aria-pressed", "true");
+      zoomSpan = btn.dataset.zoom === "full" ? null : Number(btn.dataset.zoom);
+      drawInspector();
+    };
+  });
+
+  document.addEventListener("keydown", ev => {
+    if (ev.target && (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA")) return;
+    if (!manifest) return;
+    if (ev.code === "Space") { ev.preventDefault(); setPlaying(!playing); }
+    else if (ev.code === "ArrowLeft") { ev.preventDefault(); setPlaying(false); showFrame(idx - 1); }
+    else if (ev.code === "ArrowRight") { ev.preventDefault(); setPlaying(false); showFrame(idx + 1); }
+  });
+
+  fetch(`${BASE}/manifest.json`)
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(data => {
+      manifest = data;
+      const m = data.meta, s = data.summary;
+      $("subtitle").textContent = `Seed ${m.seed} · ${m.orbit_alt_km} km LEO @ ${m.orbit_inc_deg}° · Client ${s.spin_deg_s}°/s · 30 m rendezvous → ring capture → detumble → calibrated release (${m.n_frames} frames)`;
+      const badge = $("status-badge");
+      const ok = s.result === "complete" && !(s.contacts_bad && s.contacts_bad.length);
+      badge.textContent = `${s.result} · ${s.contacts_bad ? s.contacts_bad.length : 0} collisions`;
+      badge.className = `badge ${ok ? "ok" : "err"}`;
+      $("m-outcome").textContent = `${s.result} (${s.contacts_bad ? s.contacts_bad.length : 0} coll)`;
+      $("scrub").max = String(Math.max(0, data.frames.length - 1));
+      buildPhaseStrip(data.frames);
+      buildPhaseJumps(data.frames);
+      showFrame(0);
+    })
+    .catch(err => {
+      $("subtitle").textContent = `Failed to load replay manifest from ${BASE}: ${err}`;
+      $("status-badge").textContent = "load error";
+      $("status-badge").className = "badge err";
+    });
+
+  // --- Interactive 3D Orbital Viewport (Three.js) ---
+  (() => {
+    const hud = $("view3d-hud");
+    const wrap = $("view3d-wrap");
+    const c3d = $("view3d-canvas");
+    if (typeof THREE === "undefined") {
+      hud.textContent = "Three.js failed to load (offline?).";
+      return;
+    }
+
+    const renderer = new THREE.WebGLRenderer({ canvas: c3d, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x04070b);
+
+    const cam = new THREE.PerspectiveCamera(45, 16 / 9, 0.02, 4000);
+    cam.up.set(0, 0, 1);
+
+    // Lighting: orbital sun + subtle Earthshine fill + ambient
+    const sunLight = new THREE.DirectionalLight(0xfff8eb, 1.35);
+    sunLight.position.set(30, -20, 10);
+    scene.add(sunLight);
+    const earthLight = new THREE.DirectionalLight(0x4a78b0, 0.35);
+    earthLight.position.set(0, 0, -20);
+    scene.add(earthLight);
+    scene.add(new THREE.AmbientLight(0x283240, 0.7));
+
+    // Starfield
+    const starPos = [];
+    for (let i = 0; i < 650; i++) {
+      const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), r = 1800;
+      starPos.push(r * Math.sin(ph) * Math.cos(th), r * Math.sin(ph) * Math.sin(th), r * Math.cos(ph));
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xdbe6f5, size: 2.2, sizeAttenuation: false })));
+
+    // Load MuJoCo orbital & procedural craft textures
+    const texLoader = new THREE.TextureLoader();
+    function loadTex(file, rx = 1, ry = 1) {
+      const t = texLoader.load(`${BASE}/textures/${file}`, () => render3D());
+      t.wrapS = THREE.RepeatWrapping;
+      t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(rx, ry);
+      t.encoding = THREE.sRGBEncoding;
+      return t;
+    }
+    const texEarth = loadTex("earth_day.jpg", 1, 1);
+    const texMli = loadTex("mli_gold.png", 3, 3);
+    const texSolar = loadTex("solar_cell.png", 2, 2);
+    const texMetal = loadTex("brushed_metal.png", 2, 2);
+    const texRad = loadTex("radiator_osr.png", 3, 3);
+
+    // Distant Earth sphere + atmosphere rim
+    const earthGroup = new THREE.Group();
+    const earthMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(420, 64, 48),
+      new THREE.MeshPhongMaterial({ map: texEarth, color: 0xffffff, emissive: 0x050d18, specular: 0x1a2838, shininess: 14 })
+    );
+    earthMesh.rotation.x = Math.PI / 2;
+    const atmoMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(426, 64, 48),
+      new THREE.MeshBasicMaterial({ color: 0x4ca6ff, transparent: true, opacity: 0.14, side: THREE.BackSide })
+    );
+    earthGroup.add(earthMesh, atmoMesh);
+    scene.add(earthGroup);
+
+    // Craft materials matching MuJoCo render_km
+    const mliMat = new THREE.MeshStandardMaterial({ map: texMli, color: 0xffffff, metalness: 0.55, roughness: 0.35 });
+    const solarMat = new THREE.MeshStandardMaterial({ map: texSolar, color: 0xffffff, metalness: 0.25, roughness: 0.30 });
+    const metalMat = new THREE.MeshStandardMaterial({ map: texMetal, color: 0xffffff, metalness: 0.85, roughness: 0.24 });
+    const radMat = new THREE.MeshStandardMaterial({ map: texRad, color: 0xffffff, metalness: 0.08, roughness: 0.55 });
+    const dishMat = new THREE.MeshStandardMaterial({ color: 0xe6e8ec, metalness: 0.15, roughness: 0.45 });
+    const nozMat = new THREE.MeshStandardMaterial({ color: 0x454a54, metalness: 0.80, roughness: 0.28 });
+    const MAT_BY_TAG = { mli: mliMat, solar: solarMat, metal: metalMat, radiator: radMat, dish: dishMat, nozzle: nozMat };
+
+    // Exact MuJoCo CAD bodies & geoms loaded from scene3d.json
+    const sceneRoot = new THREE.Group();
+    scene.add(sceneRoot);
+    let bodyGroups = [];
+    let bodyNames = [];
+    let sceneReady = false;
+
+    function buildGeometryFromSpec(g, meshGeos) {
+      const s = g.size;
+      if (g.t === 7 && meshGeos[g.mesh]) return meshGeos[g.mesh];
+      if (g.t === 6) return new THREE.BoxGeometry(2 * s[0], 2 * s[1], 2 * s[2]);
+      if (g.t === 5) {
+        const geo = new THREE.CylinderGeometry(s[0], s[0], 2 * s[1], 24);
+        geo.rotateX(Math.PI / 2);
+        return geo;
+      }
+      if (g.t === 3) {
+        const geo = new THREE.CapsuleGeometry(s[0], 2 * s[1], 8, 20);
+        geo.rotateX(Math.PI / 2);
+        return geo;
+      }
+      if (g.t === 2) return new THREE.SphereGeometry(s[0], 20, 16);
+      return null;
+    }
+
+    fetch(`${BASE}/scene3d.json`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(s3d => {
+        const meshGeos = {};
+        for (const [mid, mdata] of Object.entries(s3d.meshes || {})) {
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute("position", new THREE.Float32BufferAttribute(mdata.v, 3));
+          geo.setIndex(mdata.f);
+          geo.computeVertexNormals();
+          const pos = geo.attributes.position, nrm = geo.attributes.normal;
+          const uvs = new Float32Array(pos.count * 2);
+          for (let k = 0; k < pos.count; k++) {
+            const x = pos.getX(k), y = pos.getY(k), z = pos.getZ(k);
+            const nx = Math.abs(nrm.getX(k)), ny = Math.abs(nrm.getY(k)), nz = Math.abs(nrm.getZ(k));
+            if (nx >= ny && nx >= nz) { uvs[2 * k] = y; uvs[2 * k + 1] = z; }
+            else if (ny >= nx && ny >= nz) { uvs[2 * k] = x; uvs[2 * k + 1] = z; }
+            else { uvs[2 * k] = x; uvs[2 * k + 1] = y; }
+          }
+          geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+          meshGeos[mid] = geo;
+        }
+        bodyNames = s3d.bodies || [];
+        bodyGroups = bodyNames.map(() => {
+          const grp = new THREE.Group();
+          sceneRoot.add(grp);
+          return grp;
+        });
+        const rgbaCache = new Map();
+        for (const g of s3d.geoms || []) {
+          const grp = bodyGroups[g.b];
+          if (!grp) continue;
+          const geo = buildGeometryFromSpec(g, meshGeos);
+          if (!geo) continue;
+          let mat = g.mat ? MAT_BY_TAG[g.mat] : null;
+          if (!mat) {
+            const c = g.rgba;
+            // Servicer gold MLI shell
+            if (Math.abs(c[0] - 0.8) < 0.05 && Math.abs(c[1] - 0.62) < 0.05 && Math.abs(c[2] - 0.22) < 0.05) {
+              mat = mliMat;
+            } else {
+              const key = c.join(",");
+              mat = rgbaCache.get(key);
+              if (!mat) {
+                const col = new THREE.Color(c[0], c[1], c[2]);
+                mat = new THREE.MeshStandardMaterial({
+                  color: col, metalness: 0.45, roughness: 0.45,
+                  transparent: c[3] < 0.99, opacity: c[3],
+                });
+                rgbaCache.set(key, mat);
+              }
+            }
+          }
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(g.pos[0], g.pos[1], g.pos[2]);
+          mesh.quaternion.set(g.quat[1], g.quat[2], g.quat[3], g.quat[0]);
+          grp.add(mesh);
+        }
+        sceneReady = true;
+        if (manifest && manifest.frames && manifest.frames[idx]) {
+          window._update3D(manifest.frames[idx]);
+        }
+      })
+      .catch(err => { hud.textContent = `3D scene load error: ${err}`; });
+
+    // Orbit camera state
+    let focusMode = "mid";
+    let theta = 0.7, phi = 1.15, dist = 6.5;
+    const panOff = new THREE.Vector3(0, 0, 0);
+    const targetPos = new THREE.Vector3(0, 0, 0);
+    let lastPose = null;
+
+    function computeTarget(p) {
+      if (!p) return new THREE.Vector3(0, 0, 0);
+      const pc = new THREE.Vector3(p.chaser[0], p.chaser[1], p.chaser[2]);
+      const pt = new THREE.Vector3(p.client[0], p.client[1], p.client[2]);
+      if (focusMode === "client") return pt;
+      if (focusMode === "chaser") return pc;
+      if (focusMode === "tool") {
+        const w3i = bodyNames.indexOf("wrist3");
+        if (p.bodies && w3i >= 0 && p.bodies[w3i]) {
+          const bw = p.bodies[w3i];
+          return new THREE.Vector3(bw[0], bw[1], bw[2]);
+        }
+        if (p.arm && p.arm.length) {
+          const tip = p.arm[p.arm.length - 1];
+          return new THREE.Vector3(tip[0], tip[1], tip[2]);
+        }
+      }
+      return pc.clone().add(pt).multiplyScalar(0.5);
+    }
+
+    function render3D() {
+      const w = wrap.clientWidth || 640, h = wrap.clientHeight || 420;
+      renderer.setSize(w, h, false);
+      cam.aspect = w / h;
+      cam.updateProjectionMatrix();
+
+      const tgt = computeTarget(lastPose).add(panOff);
+      targetPos.copy(tgt);
+      const sp = Math.sin(phi), cp = Math.cos(phi);
+      cam.position.set(
+        tgt.x + dist * sp * Math.cos(theta),
+        tgt.y + dist * sp * Math.sin(theta),
+        tgt.z + dist * cp
+      );
+      cam.lookAt(tgt);
+      renderer.render(scene, cam);
+    }
+
+    // Full recorded trajectory trails (servicer + wrist3/tool tip)
+    const trajGroup = new THREE.Group();
+    scene.add(trajGroup);
+    let trajBuilt = false;
+    function buildTrajectoryTrails() {
+      if (trajBuilt || !manifest || !manifest.frames) return;
+      const ptsC = [], ptsT = [];
+      const w3i = bodyNames.indexOf("wrist3");
+      for (const fr of manifest.frames) {
+        if (!fr.pose) continue;
+        ptsC.push(fr.pose.chaser[0], fr.pose.chaser[1], fr.pose.chaser[2]);
+        if (fr.pose.bodies && w3i >= 0 && fr.pose.bodies[w3i]) {
+          const bw = fr.pose.bodies[w3i];
+          ptsT.push(bw[0], bw[1], bw[2]);
+        } else if (fr.pose.arm && fr.pose.arm.length) {
+          const tip = fr.pose.arm[fr.pose.arm.length - 1];
+          ptsT.push(tip[0], tip[1], tip[2]);
+        }
+      }
+      if (ptsC.length >= 6) {
+        const gC = new THREE.BufferGeometry();
+        gC.setAttribute("position", new THREE.Float32BufferAttribute(ptsC, 3));
+        trajGroup.add(new THREE.Line(gC, new THREE.LineBasicMaterial({ color: 0x58c4ff, transparent: true, opacity: 0.45 })));
+      }
+      if (ptsT.length >= 6) {
+        const gT = new THREE.BufferGeometry();
+        gT.setAttribute("position", new THREE.Float32BufferAttribute(ptsT, 3));
+        trajGroup.add(new THREE.Line(gT, new THREE.LineBasicMaterial({ color: 0xf0b429, transparent: true, opacity: 0.5 })));
+      }
+      trajBuilt = true;
+    }
+
+    window._update3D = f => {
+      if (!f || !f.pose) {
+        hud.textContent = "3D poses not in this manifest (re-record to populate).";
+        render3D();
+        return;
+      }
+      lastPose = f.pose;
+      if (sceneReady) buildTrajectoryTrails();
+      const p = f.pose;
+      if (sceneReady && p.bodies && p.bodies.length === bodyGroups.length) {
+        for (let i = 0; i < bodyGroups.length; i++) {
+          const b = p.bodies[i];
+          bodyGroups[i].position.set(b[0], b[1], b[2]);
+          bodyGroups[i].quaternion.set(b[4], b[5], b[6], b[3]);
+        }
+      }
+      if (p.r_hat) {
+        const rh = new THREE.Vector3(p.r_hat[0], p.r_hat[1], p.r_hat[2]).normalize();
+        const mid = computeTarget(p);
+        earthGroup.position.copy(mid).addScaledVector(rh, -490);
+        earthLight.position.copy(mid).addScaledVector(rh, -50);
+      }
+      if (p.sun) {
+        sunLight.position.set(p.sun[0] * 80, p.sun[1] * 80, p.sun[2] * 80);
+      }
+      hud.textContent = `t=${f.t.toFixed(1)}s · focus=${focusMode} · zoom=${dist.toFixed(1)}m`;
+      render3D();
+    };
+
+    // Mouse / wheel orbit + pan + zoom
+    let dragMode = null, px0 = 0, py0 = 0;
+    c3d.addEventListener("contextmenu", ev => ev.preventDefault());
+    c3d.addEventListener("pointerdown", ev => {
+      c3d.setPointerCapture(ev.pointerId);
+      dragMode = (ev.button === 2 || ev.shiftKey) ? "pan" : "orbit";
+      px0 = ev.clientX; py0 = ev.clientY;
+    });
+    c3d.addEventListener("pointermove", ev => {
+      if (!dragMode) return;
+      const dx = ev.clientX - px0, dy = ev.clientY - py0;
+      px0 = ev.clientX; py0 = ev.clientY;
+      if (dragMode === "orbit") {
+        theta -= dx * 0.008;
+        phi = Math.max(0.08, Math.min(Math.PI - 0.08, phi - dy * 0.008));
+      } else {
+        const fwd = new THREE.Vector3().subVectors(targetPos, cam.position).normalize();
+        const right = new THREE.Vector3().crossVectors(fwd, cam.up).normalize();
+        const upC = new THREE.Vector3().crossVectors(right, fwd).normalize();
+        const s = dist * 0.002;
+        panOff.addScaledVector(right, -dx * s).addScaledVector(upC, dy * s);
+      }
+      render3D();
+    });
+    c3d.addEventListener("pointerup", () => { dragMode = null; });
+    c3d.addEventListener("wheel", ev => {
+      ev.preventDefault();
+      dist = Math.max(0.45, Math.min(80.0, dist * Math.exp(ev.deltaY * 0.0011)));
+      if (lastPose) hud.textContent = `focus=${focusMode} · zoom=${dist.toFixed(1)}m`;
+      render3D();
+    }, { passive: false });
+
+    document.querySelectorAll("#focus-btns button").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll("#focus-btns button").forEach(b => b.setAttribute("aria-pressed", "false"));
+        btn.setAttribute("aria-pressed", "true");
+        focusMode = btn.dataset.focus;
+        panOff.set(0, 0, 0);
+        if (focusMode === "tool") dist = 1.4;
+        else if (focusMode === "client" || focusMode === "chaser") dist = 3.8;
+        render3D();
+      };
+    });
+    $("btn-3d-zoom-in").onclick = () => { dist = Math.max(0.45, dist * 0.78); render3D(); };
+    $("btn-3d-zoom-out").onclick = () => { dist = Math.min(80.0, dist * 1.28); render3D(); };
+    $("btn-3d-reset").onclick = () => { theta = 0.7; phi = 1.15; dist = 6.5; panOff.set(0, 0, 0); render3D(); };
+    window.addEventListener("resize", () => render3D());
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+{
+  "name": "client_p7",
+  "title": "300 kg-class client without a bar, grasped by its 610 mm adapter ring",
+  "note": "bus 1.5 x 1.0 x 1.0 m, ~300 kg, one 3-panel wing on +Y, 610 mm launch adapter ring and small thrusters on +X (grasp face), high-gain dish on +Z, no grapple bar",
+  "mass_kg": 300.1,
+  "com_m": [
+    0.03401,
+    0.11424,
+    0.01538
+  ],
+  "inertia_kgm2": [
+    [
+      140.4156,
+      -5.8657,
+      -1.4582
+    ],
+    [
+      -5.8657,
+      83.3953,
+      1.2194
+    ],
+    [
+      -1.4582,
+      1.2194,
+      168.1438
+    ]
+  ],
+  "bbox_m": [
+    -0.75,
+    -0.508,
+    -0.7114,
+    0.81,
+    3.84,
+    0.8459
+  ],
+  "parts": [
+    {
+      "name": "client_bus",
+      "mass_kg": 270.0,
+      "kind": "box"
+    },
+    {
+      "name": "wing_r_yoke",
+      "mass_kg": 1.0,
+      "kind": "mesh"
+    },
+    {
+      "name": "wing_r_panel1",
+      "mass_kg": 5.0,
+      "kind": "box"
+    },
+    {
+      "name": "wing_r_panel2",
+      "mass_kg": 5.0,
+      "kind": "box"
+    },
+    {
+      "name": "wing_r_panel3",
+      "mass_kg": 5.0,
+      "kind": "box"
+    },
+    {
+      "name": "adapter_ring",
+      "mass_kg": 4.5,
+      "kind": "mesh"
+    },
+    {
+      "name": "thruster_main",
+      "mass_kg": 0.3,
+      "kind": "mesh"
+    },
+    {
+      "name": "rcs_1",
+      "mass_kg": 0.15,
+      "kind": "mesh"
+    },
+    {
+      "name": "rcs_2",
+      "mass_kg": 0.15,
+      "kind": "mesh"
+    },
+    {
+      "name": "rcs_3",
+      "mass_kg": 0.15,
+      "kind": "mesh"
+    },
+    {
+      "name": "rcs_4",
+      "mass_kg": 0.15,
+      "kind": "mesh"
+    },
+    {
+      "name": "hga_dish",
+      "mass_kg": 6.0,
+      "kind": "mesh"
+    },
+    {
+      "name": "star_tracker_1",
+      "mass_kg": 0.6,
+      "kind": "mesh"
+    },
+    {
+      "name": "star_tracker_2",
+      "mass_kg": 0.6,
+      "kind": "mesh"
+    },
+    {
+      "name": "radiator_1",
+      "mass_kg": 1.5,
+      "kind": "box"
+    }
+  ],
+  "ring_site_m": [
+    0.81,
+    0.0,
+    0.0
+  ],
+  "ring": {
+    "d_outer_mm": 610.0,
+    "height_mm": 60.0,
+    "wall_mm": 22.0,
+    "lip_mm": [
+      12.0,
+      15.0
+    ],
+    "collision_segments": 48
+  }
+}

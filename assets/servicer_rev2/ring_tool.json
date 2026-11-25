@@ -1,0 +1,406 @@
+{
+ "version": 2,
+ "mass_kg": 2.166,
+ "com_m": [
+  0.0924887152507245,
+  -0.011478438080673363,
+  0.003214313747210567
+ ],
+ "inertia_kgm2": [
+  [
+   0.004298501261110132,
+   -0.00045796792714078736,
+   -0.00027706849675167365
+  ],
+  [
+   -0.00045796792714078736,
+   0.004232879246784454,
+   -0.0005130406335513442
+  ],
+  [
+   -0.00027706849675167365,
+   -0.0005130406335513442,
+   0.0035009504490691543
+  ]
+ ],
+ "palm_x_m": 0.13,
+ "width_m": 0.08,
+ "jaw_width_m": 0.06,
+ "ring_centre_z_m": -0.294,
+ "envelope_open_mm": [
+  115.0,
+  120.0,
+  150.0
+ ],
+ "parts": {
+  "flange": {
+   "mass_kg": 0.1202,
+   "group": "base"
+  },
+  "housing": {
+   "mass_kg": 0.567,
+   "group": "base"
+  },
+  "neck": {
+   "mass_kg": 0.1958,
+   "group": "base"
+  },
+  "palm": {
+   "mass_kg": 0.162,
+   "group": "base"
+  },
+  "rail_in": {
+   "mass_kg": 0.0339,
+   "group": "base"
+  },
+  "rail_hook": {
+   "mass_kg": 0.0371,
+   "group": "base"
+  },
+  "brg_in": {
+   "mass_kg": 0.0113,
+   "group": "base"
+  },
+  "brg_hook": {
+   "mass_kg": 0.0113,
+   "group": "base"
+  },
+  "screw_in": {
+   "mass_kg": 0.0197,
+   "group": "base"
+  },
+  "screw_hook": {
+   "mass_kg": 0.0217,
+   "group": "base"
+  },
+  "jaw_in": {
+   "mass_kg": 0.1848,
+   "group": "in"
+  },
+  "car_in": {
+   "mass_kg": 0.0564,
+   "group": "in"
+  },
+  "jaw_hook": {
+   "mass_kg": 0.1838,
+   "group": "hook"
+  },
+  "hook_tip": {
+   "mass_kg": 0.0533,
+   "group": "hook"
+  },
+  "car_hook": {
+   "mass_kg": 0.0564,
+   "group": "hook"
+  },
+  "cam_unit": {
+   "mass_kg": 0.45,
+   "group": "cam"
+  },
+  "cam_lens": {
+   "mass_kg": 0.0004,
+   "group": "cam"
+  },
+  "cam_lens2": {
+   "mass_kg": 0.0004,
+   "group": "cam"
+  },
+  "cam_lamp": {
+   "mass_kg": 0.0005,
+   "group": "cam"
+  }
+ },
+ "joints": {
+  "jaw_in": {
+   "axis": [
+    0,
+    0,
+    -1
+   ],
+   "stroke_m": 0.02
+  },
+  "hook": {
+   "axis": [
+    0.0,
+    0,
+    1.0
+   ],
+   "stroke_m": 0.025
+  },
+  "draw": {
+   "axis": [
+    -1,
+    0,
+    0
+   ],
+   "stroke_m": 0.006
+  }
+ },
+ "radii_mm": {
+  "jaw_in": [
+   273.0,
+   283.0
+  ],
+  "hook_tip": [
+   305.0,
+   323.5
+  ],
+  "hook_finger": [
+   323.0,
+   333.0
+  ]
+ },
+ "ring_section_mm": {
+  "wall_r": [
+   283.0,
+   305.0
+  ],
+  "lip_r": [
+   305.0,
+   317.0
+  ],
+  "top_x": 130.0,
+  "lip_bottom_x": 145.0
+ },
+ "checks": {
+  "open": {
+   "flange": [
+    68.0,
+    0.0
+   ],
+   "housing": [
+    48.0,
+    0.0
+   ],
+   "neck": [
+    20.0,
+    0.0
+   ],
+   "palm": [
+    0.0,
+    0.0
+   ],
+   "rail_in": [
+    44.0,
+    0.0
+   ],
+   "rail_hook": [
+    44.18,
+    0.0
+   ],
+   "brg_in": [
+    54.0,
+    0.0
+   ],
+   "brg_hook": [
+    64.55,
+    0.0
+   ],
+   "screw_in": [
+    30.0,
+    0.0
+   ],
+   "screw_hook": [
+    30.34,
+    0.0
+   ],
+   "jaw_in": [
+    19.88,
+    0.0
+   ],
+   "car_in": [
+    35.0,
+    0.0
+   ],
+   "jaw_hook": [
+    30.9,
+    0.0
+   ],
+   "hook_tip": [
+    13.71,
+    0.0
+   ],
+   "car_hook": [
+    45.17,
+    0.0
+   ],
+   "cam_unit": [
+    44.0,
+    0.0
+   ],
+   "cam_lens": [
+    47.85,
+    0.0
+   ],
+   "cam_lens2": [
+    43.0,
+    0.0
+   ],
+   "cam_lamp": [
+    43.0,
+    0.0
+   ]
+  },
+  "closed": {
+   "flange": [
+    68.0,
+    0.0
+   ],
+   "housing": [
+    48.0,
+    0.0
+   ],
+   "neck": [
+    20.0,
+    0.0
+   ],
+   "palm": [
+    0.0,
+    0.0
+   ],
+   "rail_in": [
+    44.0,
+    0.0
+   ],
+   "rail_hook": [
+    44.18,
+    0.0
+   ],
+   "brg_in": [
+    54.0,
+    0.0
+   ],
+   "brg_hook": [
+    64.55,
+    0.0
+   ],
+   "screw_in": [
+    30.0,
+    0.0
+   ],
+   "screw_hook": [
+    30.34,
+    0.0
+   ],
+   "jaw_in": [
+    0.0,
+    0.0
+   ],
+   "car_in": [
+    21.87,
+    0.0
+   ],
+   "jaw_hook": [
+    6.0,
+    0.0
+   ],
+   "hook_tip": [
+    0.0,
+    0.0
+   ],
+   "car_hook": [
+    25.3,
+    0.0
+   ],
+   "cam_unit": [
+    44.0,
+    0.0
+   ],
+   "cam_lens": [
+    47.85,
+    0.0
+   ],
+   "cam_lens2": [
+    43.0,
+    0.0
+   ],
+   "cam_lamp": [
+    43.0,
+    0.0
+   ]
+  },
+  "drawn": {
+   "flange": [
+    68.0,
+    0.0
+   ],
+   "housing": [
+    48.0,
+    0.0
+   ],
+   "neck": [
+    20.0,
+    0.0
+   ],
+   "palm": [
+    0.0,
+    0.0
+   ],
+   "rail_in": [
+    44.0,
+    0.0
+   ],
+   "rail_hook": [
+    44.18,
+    0.0
+   ],
+   "brg_in": [
+    54.0,
+    0.0
+   ],
+   "brg_hook": [
+    64.55,
+    0.0
+   ],
+   "screw_in": [
+    30.0,
+    0.0
+   ],
+   "screw_hook": [
+    30.34,
+    0.0
+   ],
+   "jaw_in": [
+    0.0,
+    0.0
+   ],
+   "car_in": [
+    21.87,
+    0.0
+   ],
+   "jaw_hook": [
+    6.0,
+    0.0
+   ],
+   "hook_tip": [
+    0.0,
+    0.0
+   ],
+   "car_hook": [
+    25.3,
+    0.0
+   ],
+   "cam_unit": [
+    44.0,
+    0.0
+   ],
+   "cam_lens": [
+    47.85,
+    0.0
+   ],
+   "cam_lens2": [
+    43.0,
+    0.0
+   ],
+   "cam_lamp": [
+    43.0,
+    0.0
+   ]
+  },
+  "internal": {
+   "open": {},
+   "closed": {},
+   "drawn": {}
+  }
+ }
+}

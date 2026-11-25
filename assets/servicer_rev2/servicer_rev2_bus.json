@@ -1,0 +1,1183 @@
+{
+ "name": "servicer_rev2_bus",
+ "frame": "chaser body (bus centre, +X to the client), metres",
+ "mga": 1.2,
+ "mass_kg": 179.976,
+ "com_m": [
+  0.00962,
+  -0.00131,
+  -0.01515
+ ],
+ "inertia_kgm2": [
+  [
+   20.5107,
+   -0.2386,
+   0.1491
+  ],
+  [
+   -0.2386,
+   19.0543,
+   -0.6703
+  ],
+  [
+   0.1491,
+   -0.6703,
+   11.0366
+  ]
+ ],
+ "bbox_m": [
+  -0.3,
+  -0.303,
+  -0.455,
+  0.2953,
+  0.303,
+  0.4795
+ ],
+ "collision_boxes": [
+  {
+   "name": "bus_col",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "size": [
+    0.25,
+    0.3,
+    0.45
+   ]
+  },
+  {
+   "name": "arm_base_plate",
+   "pos": [
+    0.254,
+    0.0,
+    -0.25
+   ],
+   "size": [
+    0.004,
+    0.08,
+    0.08
+   ]
+  },
+  {
+   "name": "launch_locks",
+   "pos": [
+    0.265,
+    -0.2,
+    0.02
+   ],
+   "size": [
+    0.015,
+    0.03,
+    0.2
+   ]
+  },
+  {
+   "name": "cluster_f_pypz",
+   "pos": [
+    0.2726,
+    0.2425,
+    0.4
+   ],
+   "size": [
+    0.0226,
+    0.0425,
+    0.03
+   ]
+  },
+  {
+   "name": "cluster_f_pynz",
+   "pos": [
+    0.2726,
+    0.23,
+    -0.4125
+   ],
+   "size": [
+    0.0226,
+    0.03,
+    0.0425
+   ]
+  },
+  {
+   "name": "cluster_f_nypz",
+   "pos": [
+    0.2726,
+    -0.23,
+    0.4125
+   ],
+   "size": [
+    0.0226,
+    0.03,
+    0.0425
+   ]
+  },
+  {
+   "name": "cluster_f_nynz",
+   "pos": [
+    0.2726,
+    -0.2425,
+    -0.4
+   ],
+   "size": [
+    0.0226,
+    0.0425,
+    0.03
+   ]
+  },
+  {
+   "name": "cluster_a_pypz",
+   "pos": [
+    -0.2738,
+    0.23,
+    0.4125
+   ],
+   "size": [
+    0.0238,
+    0.03,
+    0.0425
+   ]
+  },
+  {
+   "name": "cluster_a_pynz",
+   "pos": [
+    -0.2738,
+    0.2425,
+    -0.4
+   ],
+   "size": [
+    0.0238,
+    0.0425,
+    0.03
+   ]
+  },
+  {
+   "name": "cluster_a_nypz",
+   "pos": [
+    -0.2738,
+    -0.2425,
+    0.4
+   ],
+   "size": [
+    0.0238,
+    0.0425,
+    0.03
+   ]
+  },
+  {
+   "name": "cluster_a_nynz",
+   "pos": [
+    -0.2738,
+    -0.23,
+    -0.4125
+   ],
+   "size": [
+    0.0238,
+    0.03,
+    0.0425
+   ]
+  },
+  {
+   "name": "star_tracker_a",
+   "pos": [
+    -0.12,
+    0.1359,
+    0.4219
+   ],
+   "size": [
+    0.042,
+    0.052,
+    0.0576
+   ]
+  },
+  {
+   "name": "star_tracker_b",
+   "pos": [
+    -0.12,
+    -0.1359,
+    0.4219
+   ],
+   "size": [
+    0.042,
+    0.052,
+    0.0576
+   ]
+  },
+  {
+   "name": "sensor_hood",
+   "pos": [
+    0.253,
+    0.2,
+    0.2625
+   ],
+   "size": [
+    0.003,
+    0.085,
+    0.0875
+   ]
+  },
+  {
+   "name": "separation_ring",
+   "pos": [
+    -0.275,
+    0.0,
+    0.0
+   ],
+   "size": [
+    0.025,
+    0.215,
+    0.215
+   ]
+  }
+ ],
+ "nozzles": [
+  {
+   "name": "thr_00",
+   "pos_m": [
+    0.27,
+    0.23,
+    0.4
+   ],
+   "force_dir": [
+    -0.642788,
+    -0.541675,
+    -0.541675
+   ],
+   "cluster": "f_pypz"
+  },
+  {
+   "name": "thr_01",
+   "pos_m": [
+    0.264,
+    0.26,
+    0.4
+   ],
+   "force_dir": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "cluster": "f_pypz"
+  },
+  {
+   "name": "thr_02",
+   "pos_m": [
+    0.27,
+    0.23,
+    -0.4
+   ],
+   "force_dir": [
+    -0.642788,
+    -0.541675,
+    0.541675
+   ],
+   "cluster": "f_pynz"
+  },
+  {
+   "name": "thr_03",
+   "pos_m": [
+    0.264,
+    0.23,
+    -0.43
+   ],
+   "force_dir": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "cluster": "f_pynz"
+  },
+  {
+   "name": "thr_04",
+   "pos_m": [
+    0.27,
+    -0.23,
+    0.4
+   ],
+   "force_dir": [
+    -0.642788,
+    0.541675,
+    -0.541675
+   ],
+   "cluster": "f_nypz"
+  },
+  {
+   "name": "thr_05",
+   "pos_m": [
+    0.264,
+    -0.23,
+    0.43
+   ],
+   "force_dir": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "cluster": "f_nypz"
+  },
+  {
+   "name": "thr_06",
+   "pos_m": [
+    0.27,
+    -0.23,
+    -0.4
+   ],
+   "force_dir": [
+    -0.642788,
+    0.541675,
+    0.541675
+   ],
+   "cluster": "f_nynz"
+  },
+  {
+   "name": "thr_07",
+   "pos_m": [
+    0.264,
+    -0.26,
+    -0.4
+   ],
+   "force_dir": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "cluster": "f_nynz"
+  },
+  {
+   "name": "thr_08",
+   "pos_m": [
+    -0.27,
+    0.23,
+    0.4
+   ],
+   "force_dir": [
+    0.866025,
+    -0.353553,
+    -0.353553
+   ],
+   "cluster": "a_pypz"
+  },
+  {
+   "name": "thr_09",
+   "pos_m": [
+    -0.264,
+    0.23,
+    0.43
+   ],
+   "force_dir": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "cluster": "a_pypz"
+  },
+  {
+   "name": "thr_10",
+   "pos_m": [
+    -0.27,
+    0.23,
+    -0.4
+   ],
+   "force_dir": [
+    0.866025,
+    -0.353553,
+    0.353553
+   ],
+   "cluster": "a_pynz"
+  },
+  {
+   "name": "thr_11",
+   "pos_m": [
+    -0.264,
+    0.26,
+    -0.4
+   ],
+   "force_dir": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "cluster": "a_pynz"
+  },
+  {
+   "name": "thr_12",
+   "pos_m": [
+    -0.27,
+    -0.23,
+    0.4
+   ],
+   "force_dir": [
+    0.866025,
+    0.353553,
+    -0.353553
+   ],
+   "cluster": "a_nypz"
+  },
+  {
+   "name": "thr_13",
+   "pos_m": [
+    -0.264,
+    -0.26,
+    0.4
+   ],
+   "force_dir": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "cluster": "a_nypz"
+  },
+  {
+   "name": "thr_14",
+   "pos_m": [
+    -0.27,
+    -0.23,
+    -0.4
+   ],
+   "force_dir": [
+    0.866025,
+    0.353553,
+    0.353553
+   ],
+   "cluster": "a_nynz"
+  },
+  {
+   "name": "thr_15",
+   "pos_m": [
+    -0.264,
+    -0.23,
+    -0.43
+   ],
+   "force_dir": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "cluster": "a_nynz"
+  }
+ ],
+ "thrust_n": 1.0,
+ "isp_s": 220.0,
+ "cant_deg": 30.0,
+ "cant_fwd_deg": 50.0,
+ "port_face_x_m": -0.3,
+ "wheels": [
+  {
+   "name": "wheel_0",
+   "pos_m": [
+    -0.09,
+    0.15,
+    0.13
+   ],
+   "axis": [
+    0.34202,
+    0.939693,
+    0.0
+   ]
+  },
+  {
+   "name": "wheel_1",
+   "pos_m": [
+    -0.09,
+    9.184850993605149e-18,
+    0.28
+   ],
+   "axis": [
+    0.34202,
+    0.0,
+    0.939693
+   ]
+  },
+  {
+   "name": "wheel_2",
+   "pos_m": [
+    -0.09,
+    -0.15,
+    0.13000000000000003
+   ],
+   "axis": [
+    0.34202,
+    -0.939693,
+    0.0
+   ]
+  },
+  {
+   "name": "wheel_3",
+   "pos_m": [
+    -0.09,
+    -2.7554552980815445e-17,
+    -0.02
+   ],
+   "axis": [
+    0.34202,
+    -0.0,
+    -0.939693
+   ]
+  }
+ ],
+ "wheel_h_nms": 12.0,
+ "wheel_tau_nm": 0.2,
+ "wheel_beta_deg": 70.0,
+ "parts": [
+  {
+   "name": "structure_shell",
+   "mass_kg": 50.4,
+   "base_mass_kg": 42.0,
+   "rgba": [
+    0.8,
+    0.62,
+    0.22,
+    1
+   ]
+  },
+  {
+   "name": "deck",
+   "mass_kg": 4.8,
+   "base_mass_kg": 4.0,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "arm_base_plate",
+   "mass_kg": 1.8,
+   "base_mass_kg": 1.5,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "launch_locks",
+   "mass_kg": 1.8,
+   "base_mass_kg": 1.5,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "prop_tank",
+   "mass_kg": 3.6,
+   "base_mass_kg": 3.0,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "propellant",
+   "mass_kg": 5.4,
+   "base_mass_kg": 4.5,
+   "rgba": [
+    0.6,
+    0.7,
+    0.9,
+    1
+   ]
+  },
+  {
+   "name": "prop_lines_valves",
+   "mass_kg": 3.6,
+   "base_mass_kg": 3.0,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cluster_f_pypz",
+   "mass_kg": 0.42,
+   "base_mass_kg": 0.35,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "thr_00",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "thr_01",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cluster_f_pynz",
+   "mass_kg": 0.42,
+   "base_mass_kg": 0.35,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "thr_02",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "thr_03",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cluster_f_nypz",
+   "mass_kg": 0.42,
+   "base_mass_kg": 0.35,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "thr_04",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "thr_05",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cluster_f_nynz",
+   "mass_kg": 0.42,
+   "base_mass_kg": 0.35,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "thr_06",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "thr_07",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cluster_a_pypz",
+   "mass_kg": 0.42,
+   "base_mass_kg": 0.35,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "thr_08",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "thr_09",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cluster_a_pynz",
+   "mass_kg": 0.42,
+   "base_mass_kg": 0.35,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "thr_10",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "thr_11",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cluster_a_nypz",
+   "mass_kg": 0.42,
+   "base_mass_kg": 0.35,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "thr_12",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "thr_13",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cluster_a_nynz",
+   "mass_kg": 0.42,
+   "base_mass_kg": 0.35,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "thr_14",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "thr_15",
+   "mass_kg": 0.456,
+   "base_mass_kg": 0.38,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "wheel_0",
+   "mass_kg": 6.0,
+   "base_mass_kg": 5.0,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "wheel_1",
+   "mass_kg": 6.0,
+   "base_mass_kg": 5.0,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "wheel_2",
+   "mass_kg": 6.0,
+   "base_mass_kg": 5.0,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "wheel_3",
+   "mass_kg": 6.0,
+   "base_mass_kg": 5.0,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "wheel_electronics",
+   "mass_kg": 1.8,
+   "base_mass_kg": 1.5,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "star_tracker_a",
+   "mass_kg": 0.48,
+   "base_mass_kg": 0.4,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "star_tracker_b",
+   "mass_kg": 0.48,
+   "base_mass_kg": 0.4,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "imu",
+   "mass_kg": 0.96,
+   "base_mass_kg": 0.8,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "lidar",
+   "mass_kg": 8.04,
+   "base_mass_kg": 6.7,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "lidar_window",
+   "mass_kg": 0.06,
+   "base_mass_kg": 0.05,
+   "rgba": [
+    0.05,
+    0.05,
+    0.08,
+    1
+   ]
+  },
+  {
+   "name": "camera_barrel",
+   "mass_kg": 0.48,
+   "base_mass_kg": 0.4,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "camera",
+   "mass_kg": 0.96,
+   "base_mass_kg": 0.8,
+   "rgba": [
+    0.25,
+    0.25,
+    0.27,
+    1
+   ]
+  },
+  {
+   "name": "lens",
+   "mass_kg": 0.06,
+   "base_mass_kg": 0.05,
+   "rgba": [
+    0.05,
+    0.05,
+    0.08,
+    1
+   ]
+  },
+  {
+   "name": "sensor_hood",
+   "mass_kg": 0.72,
+   "base_mass_kg": 0.6,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "optical_bench",
+   "mass_kg": 3.0,
+   "base_mass_kg": 2.5,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "separation_ring",
+   "mass_kg": 1.92,
+   "base_mass_kg": 1.6,
+   "rgba": [
+    0.55,
+    0.56,
+    0.58,
+    1
+   ]
+  },
+  {
+   "name": "cells_py",
+   "mass_kg": 3.0,
+   "base_mass_kg": 2.5,
+   "rgba": [
+    0.1,
+    0.16,
+    0.42,
+    1
+   ]
+  },
+  {
+   "name": "cells_ny",
+   "mass_kg": 3.0,
+   "base_mass_kg": 2.5,
+   "rgba": [
+    0.1,
+    0.16,
+    0.42,
+    1
+   ]
+  },
+  {
+   "name": "battery",
+   "mass_kg": 10.8,
+   "base_mass_kg": 9.0,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "obc_compute",
+   "mass_kg": 7.2,
+   "base_mass_kg": 6.0,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "pcdu",
+   "mass_kg": 6.0,
+   "base_mass_kg": 5.0,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "transponder",
+   "mass_kg": 2.4,
+   "base_mass_kg": 2.0,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "gnss_sband",
+   "mass_kg": 0.96,
+   "base_mass_kg": 0.8,
+   "rgba": [
+    0.88,
+    0.89,
+    0.9,
+    1
+   ]
+  },
+  {
+   "name": "radiator",
+   "mass_kg": 3.6,
+   "base_mass_kg": 3.0,
+   "rgba": [
+    0.88,
+    0.89,
+    0.9,
+    1
+   ]
+  },
+  {
+   "name": "harness_0",
+   "mass_kg": 2.7,
+   "base_mass_kg": 2.25,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "harness_1",
+   "mass_kg": 2.7,
+   "base_mass_kg": 2.25,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "harness_2",
+   "mass_kg": 2.7,
+   "base_mass_kg": 2.25,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "harness_3",
+   "mass_kg": 2.7,
+   "base_mass_kg": 2.25,
+   "rgba": [
+    0.45,
+    0.47,
+    0.5,
+    1
+   ]
+  },
+  {
+   "name": "mli",
+   "mass_kg": 7.2,
+   "base_mass_kg": 6.0,
+   "rgba": [
+    0.8,
+    0.62,
+    0.22,
+    1
+   ]
+  }
+ ]
+}

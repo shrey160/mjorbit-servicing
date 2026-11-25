@@ -1,0 +1,16 @@
+# Runtime outputs, logs, replays, datasets, and caches
+runs/
+optix7cache.db
+assets/pbr_assets/
+
+# Python / OS / CAD backups
+**/__pycache__/
+*.py[cod]
+*.FCBak
+*.npz
+*.mp4
+*.ckpt
+*.log
+*.log.jsonl
+.DS_Store
+Thumbs.db
