@@ -14,37 +14,23 @@ This repository treats upstream `mjorbit` (`simulator/`) as an unmodified physic
 
 ## 2. Baseline Experiment: P7 (Unprepared Ring Capture)
 
-**P7** was an exploratory baseline to test how much of a full orbital servicing mission—from 30 m rendezvous to docking, detumble, and safe release—could be solved **without simulator truth in the control loop**, capturing an unprepared, spinning **300.1 kg asymmetric satellite** (`client_p7`) by its **24" (609.6 mm) Marman launch adapter ring** in a **550 km sun-synchronous orbit**.
+**P7** was our first experiment to see how far an onboard-only (truth-free) autonomy stack could go—taking an ESPA-class 6-DOF servicer from 30 m rendezvous through launch-adapter-ring capture, detumble, and safe release on an unprepared spinning satellite in Low Earth Orbit.
 
-| Subsystem | Design Choice |
-|---|---|
-| **Servicer Bus** | 196.5 kg wet ESPA-class servicer; 16 x 1 N canted RCS thrusters (50 ms min impulse, 3 m plume keep-out cone); 4 x 12 N·m·s / 0.2 N·m reaction wheels in a pyramid |
-| **Manipulator & Tool** | Narrow-elbow 6-DOF arm (1.18 m reach) with form-closure `ring_tool` v3 (lead-screw locking jaws, wrist force/torque + pad touch sensing) |
-| **Sensors & Perception** | 60 m flash LiDAR + 512 px `bus_cam` (far bearing CNN `BusNet_orb` + LiDAR 6-DOF pose/ring fit) + 50 mm wrist stereo pair (`StereoNet_orb`) with Earth limb & starfield |
-| **Autonomy & RL** | Modular phases (`far_leg` -> 8 m acquisition -> fly-around -> wrist capture -> detumble -> 500 Hz audited release) + `mjorbit_warp` GPU residual PPO controller (`G3`) |
+### What worked
 
-### Benchmark Results
+- **Zero collisions across 25 orbital runs:** `16 / 25` missions completed end-to-end (`16 / 16` once within capture range), with `0` collisions, `0` crashes, and clean detumble + release.
+- **Onboard perception against Earth & stars:** Fine-tuned orbital vision (`BusNet_orb` + wrist stereo `StereoNet_orb`) locked onto the target on all `25 / 25` runs and tightened close-range ring accuracy to `~1.25 mm`.
+- **GPU residual RL (`mjorbit_warp`):** Boosted hard-case capture from `80.3%` to `85.0%` (`97.2%` nominal, `0` collisions) while cutting peak contact forces by `4.7x`.
+- **Replay & photorealistic inspection:** Synchronized 5-camera + Three.js 3D CAD browser console ([`src/viz/index.html`](src/viz/index.html)) and Blender Cycles PBR renderer ([`src/viz/render_blender.py`](src/viz/render_blender.py)).
 
-| Benchmark | Result | Key Metrics |
-|---|---|---|
-| **25-Seed Orbital E2E** (`MjorbitBackend`, Earth + stars) | **16 / 25** full missions completed | **16 / 16 (100%)** capture conversion once in reach; **0 / 25 collisions**; median propellant **322.1 g**; median release push **0.123 mm/s** |
-| **GPU Residual RL** (`mjorbit_warp`, `N = 360` worlds) | **85.0%** capture (**97.2%** nominal) | Up from **80.3%** (**93.9%** nominal) classical baseline; **0 collisions**; **4.7x** lower peak contact force (`390.9 N -> 82.6 N`) on smoke seed |
-| **10 s Orbital Parity** (vs. upstream `mjorbit.mjo_step`) | Exact match | **0.0003 mm** chaser and **0.0000 mm** client free-drift error with MuJoCo lock equalities preserved |
+### What didn't & limitations
 
-### What Worked
+- **Pre-capture aborts (`9 / 25`):** Safely aborted before contact due to fast target spin (`> 2 °/s`), missed 8 m ring lock, or solar-wing keep-out geometry.
+- **Packaging & leverage:** Folding a long single arm in front of the bus pushed stowed depth slightly past the standard 15" ESPA envelope (`727 mm` vs `711 mm`) and increased detumble momentum.
+- **Narrow tumble tolerance:** Thrust limits cap spin near `2–2.5 °/s`, transverse tumble triggers aborts above `0.25 °/s`, and the rigid gripper palm struggles past `2°` of roll tilt.
+- **Sim-to-real gaps:** OpenGL rendering lacks real orbital glare/LiDAR dropouts, pose fitting assumes known client CAD geometry, and rigid-body physics omits joint/solar-wing flex and mid-capture hardware faults ([full critique](docs/EVOLUTION_AND_CRITIQUE.md)).
 
-- **Truth-free perception survived bright Earth-limb backgrounds:** After fine-tuning on orbital Earth/star imagery, `BusNet_orb` locked onto the target on all **25 / 25** orbital seeds, and `StereoNet_orb` cut median in-plane ring pose error from **10.00 mm down to 1.25 mm**.
-- **Clean capture, detumble, and release:** Zero grip losses during detumble, zero crashes, and zero collisions across the entire 25-seed orbital evaluation.
-- **Built-in visualization & synthetic rendering:** Includes a synchronized **5-camera + telemetry + Three.js 3D CAD replay console** ([`src/viz/index.html`](src/viz/index.html)) and a headless **Blender 5.3 Cycles PBR renderer** ([`src/viz/render_blender.py`](src/viz/render_blender.py)).
-
-### What Broke & Where the Limits Are
-
-P7 also revealed clear physical and autonomy cliffs that drive our next configurations:
-
-- **9 / 25 safe pre-capture aborts:** All 9 seeds ended safely without collision (`4` blocked by the `2.0 °/s` spin safety gate, `2` failed to lock the ring from `8 m`, `2` intersected the solar-wing keep-out envelope during approach, `1` lost LiDAR lock at the 3 m hold).
-- **ESPA stowage miss:** Folding the `1.18 m` single arm in front of the bus gave a **727 mm** stowed depth—**16 mm deeper** than the **711 mm** standard 15" ESPA limit (`711 x 610 x 965 mm`)—and the long reach increased detumble momentum (`~2.3 m` CoM-to-CoM lever).
-- **Narrow tumble envelope:** Thrust authority (`1.5 N / 196.5 kg`) caps operation at **2.0 °/s rated (2.5 °/s max)** axial spin. Aborts trigger above **0.25 °/s** transverse rate, and the rigid gripper palm fails to seat past **2°** of roll tilt.
-- **Sim-to-real & physics gaps:** OpenGL-trained networks still miss >120 dB orbital glare and flash-LiDAR multipath; acquisition still relies on known CAD dimensions for the `609.6 mm` ring; rigid-body MuJoCo omits joint/solar-wing compliance and real flange stress limits (`1.3–2.1 kN` peak clamp spikes); mid-capture hardware faults are not yet injected ([critique](docs/EVOLUTION_AND_CRITIQUE.md)).
+*Detailed hardware sizing and benchmark logs: [docs/P7_SPEC.md](docs/P7_SPEC.md) · [docs/SERVICER_REV2_RESEARCH.md](docs/SERVICER_REV2_RESEARCH.md).*
 
 ---
 
@@ -121,7 +107,7 @@ blender --background --python src/viz/render_blender.py -- \
 
 P7 gives us a modular testbed (`src/specs/` + `src/sim/` + `src/phases/`) to swap spacecraft geometries, sensors, and controllers cleanly without touching `simulator/` (see [`experiments/README.md`](experiments/README.md)):
 
-1. **Dual-Arm Recessed ESPA Servicer** ([CAD](cad/concepts/dual_arm_espa/build_dual_arm_concept.py) · [Research](docs/DUAL_ARM_CONCEPT_RESEARCH.md))
+1. **Dual-Arm Recessed ESPA Servicer** ([FreeCAD Model](cad/concepts/dual_arm_espa/dual_arm_concept.FCStd) · [Build Script](cad/concepts/dual_arm_espa/build_dual_arm_concept.py) · [Research](docs/DUAL_ARM_CONCEPT_RESEARCH.md))
    A centerline (`y = +/-70 mm`) recessed dual-arm concept (`600 x 600 x 900 mm` bus, **`695.0 x 606.0 x 951.1 mm`** stowed inside standard 15" ESPA `711 x 610 x 965 mm`) supporting **`8"`–`37"`** adapter rings, soft impedance dual-arm closing, and ~59% lower reduced-mass detumble momentum for **plume-free wheels-only detumble**.
 2. **Multi-Client & High-Tumble Envelopes** ([`src/specs/client_spec.py`](src/specs/client_spec.py))
    Symmetric double-wing (`client_double_wing`), larger inertias, passive roll compliance, and compliant `3–6 °/s` tumbling/nutating capture policies trained on `mjorbit_warp`.
@@ -153,7 +139,7 @@ mjorbit-servicing/
 │   ├── rl/               # Batched GPU reach environment (mjorbit_warp), Torch IK, G3 PPO
 │   ├── checks/           # Parity tests, sensor/grasp benches, fault injection, truth audits
 │   └── viz/              # 5-view replay recorder, HTML/Three.js console, MP4 & Blender Cycles
-├── cad/                  # FreeCAD scripts (Rev-2 bus/arm/tool + dual-arm ESPA concept)
+├── cad/                  # FreeCAD (.FCStd), STEP (.step) models & build scripts (Rev-2, client_p7, dual-arm concept)
 ├── experiments/          # Configuration roadmap & new experiment workspace
 └── docs/                 # P7 spec, hardware studies, synthetic data report, evolution critique
 ```
