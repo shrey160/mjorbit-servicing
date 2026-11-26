@@ -34,7 +34,7 @@ V = App.Vector
 HERE = (
     os.path.dirname(os.path.abspath(__file__))
     if "__file__" in globals()
-    else r"c:/Shrey_Projs/robotics/mjorbit-servicing/cad/concepts/dual_arm_espa"
+    else os.getcwd()
 )
 DOC_NAME = "DualArmServicerConcept"
 
@@ -619,9 +619,10 @@ def build():
     g_toff = doc.addObject("App::DocumentObjectGroup", "Target_Ring_24in_LargeOff")
     g_open = doc.addObject("App::DocumentObjectGroup", "Gripper_Open_24in_Approach")
 
-    # 1. Core expanded chamfered bus shell (640 X x 600 Y x 910 Z mm)
+    # 1. Core expanded chamfered bus shell (640 X x 600 Y x 910 Z mm) with 15 mm Al-honeycomb inner bay
     shell = chamfered_box(HX, HY, HZ, CH)
-    inner_bay = Part.makeBox(460.0, 540.0, 840.0, V(-295.0, -270.0, -420.0))  # 20mm front bulkhead X=165..185
+    inner_bay = chamfered_box(235.0, 285.0, 440.0, 55.0)
+    inner_bay.translate(V(-70.0, 0.0, 0.0))  # X = -305..+165 mm, 20 mm front bulkhead X = 165..185
     cav_p = Part.makeBox(HX - CAV_XMIN + 15.0, CAV_W, CAV_H, V(CAV_XMIN, CAV_Y - 0.5 * CAV_W, -0.5 * CAV_H))
     cav_n = Part.makeBox(HX - CAV_XMIN + 15.0, CAV_W, CAV_H, V(CAV_XMIN, -CAV_Y - 0.5 * CAV_W, -0.5 * CAV_H))
     bev_p = make_cavity_mouth_bevel(CAV_Y)
@@ -632,8 +633,10 @@ def build():
     b1 = V(ARM_MOUNT_X, CAV_Y, ARM_MOUNT_Z)
     b2 = V(ARM_MOUNT_X, -CAV_Y, -ARM_MOUNT_Z)
 
-    # Recessed +Y optical pocket (X = 185..335, Y = 154..288, Z = -119..+49) -> clears 20mm bulkhead & Arm1 arc!
-    opt_pocket = Part.makeBox(150.0, 134.0, 168.0, V(CAV_XMIN, 154.0, -119.0))
+    # Recessed +Y optical pocket (X = 185..335, Y = 154..288, Z = -119..+88) -> full-height DragonEye + IRIS, clears bulkhead & Arm1 arc!
+    opt_pocket = Part.makeBox(150.0, 134.0, 207.0, V(CAV_XMIN, 154.0, -119.0))
+    # Pass-through slot in 20 mm front bulkhead (X = 162..188, Y = 210..279, Z = -40..-16) for DragonEye PGS thermal strap
+    strap_slot = Part.makeBox(26.0, 69.0, 24.0, V(162.0, 210.0, -40.0))
 
     # Recessed +Z star tracker pockets tilted +-20 deg outward at (-130, +-175, +455)
     st_cuts = []
@@ -652,7 +655,7 @@ def build():
                 pz0 = 379.0 if sz > 0 else -431.0
                 rcs_cuts.append(Part.makeBox(24.0, 52.0, 52.0, V(px0, py0, pz0)))
 
-    bore_tools = [inner_bay, cav_p, cav_n, bev_p, bev_n, arc_p, arc_n, opt_pocket] + st_cuts + rcs_cuts
+    bore_tools = [inner_bay, cav_p, cav_n, bev_p, bev_n, arc_p, arc_n, opt_pocket, strap_slot] + st_cuts + rcs_cuts
     for cy_b, cz_b in ((CAV_Y, ARM_MOUNT_Z), (-CAV_Y, -ARM_MOUNT_Z)):
         bore_tools.append(Part.makeCylinder(46.0, 84.0, V(105.0, cy_b, cz_b), V(1, 0, 0)))
         bore_tools.append(Part.makeCylinder(50.5, 6.5, V(180.5, cy_b, cz_b), V(1, 0, 0)))
@@ -696,14 +699,14 @@ def build():
         add_part(doc, g_bus, f"HDRM_CupCone_{tag_arm}", cradle, TITANIUM)
         hdrm_shapes.extend([nut, cradle])
 
-    # 2. Recessed +Y Optical Bay (DragonEye 3.6kg LiDAR + 3D PLUS IRIS Cam, max X = +332 mm)
+    # 2. Recessed +Y Optical Bay (Full-height DragonEye 122x119x112 mm + 3D PLUS IRIS 86x72x69 mm, max X = +332 mm)
     sensor_shapes = []
-    lidar_body = Part.makeBox(132.0, 124.0, 84.0, V(187.0, 159.0, -39.0))
-    lidar_hood = Part.makeBox(12.0, 126.0, 86.0, V(319.0, 158.0, -40.0))
-    lidar_win = Part.makeBox(3.0, 104.0, 66.0, V(330.0, 169.0, -30.0))
-    cam_body = Part.makeBox(76.0, 72.0, 66.0, V(242.0, 185.0, -108.0))
-    cam_barrel = Part.makeCylinder(26.0, 12.0, V(318.0, 221.0, -75.0), V(1, 0, 0))
-    cam_lens = Part.makeCylinder(21.0, 2.5, V(330.0, 221.0, -75.0), V(1, 0, 0))
+    lidar_body = Part.makeBox(122.0, 119.0, 112.0, V(197.0, 162.0, -36.0))
+    lidar_hood = Part.makeBox(12.0, 121.0, 114.0, V(319.0, 161.0, -37.0))
+    lidar_win = Part.makeBox(3.0, 100.0, 92.0, V(330.0, 171.5, -26.0))
+    cam_body = Part.makeBox(86.0, 72.0, 69.0, V(232.0, 185.0, -112.0))
+    cam_barrel = Part.makeCylinder(26.0, 12.0, V(318.0, 221.0, -77.5), V(1, 0, 0))
+    cam_lens = Part.makeCylinder(21.0, 2.5, V(330.0, 221.0, -77.5), V(1, 0, 0))
     add_part(doc, g_bus, "Recessed_DragonEye_Body", lidar_body, TITANIUM)
     add_part(doc, g_bus, "Recessed_DragonEye_Bezel", lidar_hood, DARK)
     add_part(doc, g_bus, "Recessed_DragonEye_Window", lidar_win, CAM_DARK)
@@ -722,7 +725,8 @@ def build():
     for tag, sy in (("SolarPanel_PY", 1.0), ("SolarPanel_NY", -1.0)):
         y0 = sy * HY if sy > 0 else -(HY + 3.0)
         add_part(doc, g_bus, tag, Part.makeBox(540.0, 3.0, 740.0, V(-270.0, y0, -370.0)), CELL_BLUE)
-    add_part(doc, g_bus, "Radiator_NZ", Part.makeBox(540.0, 480.0, 4.0, V(-270.0, -240.0, -HZ - 4.0)), WHITE)
+    # Right-sized 520 x 375 mm (0.195 m^2) -Z OSR radiator (remaining -Z face blanketed w/ Gold MLI)
+    add_part(doc, g_bus, "Radiator_NZ", Part.makeBox(520.0, 375.0, 4.0, V(-260.0, -187.5, -HZ - 4.0)), WHITE)
 
     for tag, sy in (("StarTracker_PY", 1.0), ("StarTracker_NY", -1.0)):
         st_bar = Part.makeCylinder(30.0, 66.0, V(0, 0, -70.0), V(0, 0, 1))
@@ -762,7 +766,7 @@ def build():
     assert ov_sens_shell < 0.1, f"Recessed sensors vs shell overlap {ov_sens_shell:.2f} mm^3"
     assert ov_rcs_shell < 0.1, f"RCS pods vs shell overlap {ov_rcs_shell:.2f} mm^3"
 
-    # 5. Bus_SideSlice_Cutaway (slice plane Y <= +70 mm exposing Arm 1 cavity, HDRM, q0 drive & 65 deg RW)
+    # 5. Bus_SideSlice_Cutaway (slice plane Y <= +70 mm exposing Arm 1 cavity, HDRM, q0 drive, decks, 65 deg RW, battery & PEPT-230)
     slice_half = Part.makeBox(950.0, 500.0, 1100.0, V(-475.0, -430.0, -550.0))
     add_part(doc, g_slice, "Slice_BusShell_GoldMLI", shell.common(slice_half), GOLD)
     add_part(doc, g_slice, "Slice_FixedBaseRoll_Arm1_Flange", Part.makeCylinder(50.0, 4.0, V(181.0, CAV_Y, ARM_MOUNT_Z), V(1, 0, 0)).common(slice_half), TITANIUM)
@@ -771,26 +775,126 @@ def build():
     add_part(doc, g_slice, "Slice_HDRM_NEA9102_Arm1", Part.makeCylinder(21.6, 39.4, V(185.6, CAV_Y, -145.0), V(1, 0, 0)).common(slice_half), HDRM_RED)
     add_part(doc, g_slice, "Slice_SepRing", sep_ring.common(slice_half), METAL)
 
-    # 6. Bus_Internal_Ref (COPV tank, 65 deg 4x RW-12 pyramid, avionics stack; must clear drives, sensors & shell)
-    tank = Part.makeSphere(155.0, V(-100.0, 0.0, 130.0))
-    avionics = Part.makeBox(180.0, 280.0, 130.0, V(-215.0, -140.0, -395.0))
+    # 6. Bus_Internal_Ref (mounted structure, coldplate avionics/FOC, full-size Ø260 RW-12 truss, G10-isolated battery, PEPT-230, STIM300, PGS strap)
+    chamfer_clip = chamfered_box(234.5, 284.5, 439.5, 55.5)
+    chamfer_clip.translate(V(-70.0, 0.0, 0.0))
+
+    # 6a. Primary Internal Structure: -Z coldplate spreader, LowerDeck, UpperDeck, AftThrustRing & vertical columns
+    coldplate_nz = Part.makeBox(456.0, 450.0, 6.0, V(-298.0, -225.0, -439.8))
+    strap_notch = Part.makeBox(22.0, 26.0, 14.0, V(144.0, 208.0, -320.0))
+    lower_deck = Part.makeBox(468.0, 568.0, 8.0, V(-304.0, -284.0, -318.0)).common(chamfer_clip).cut(strap_notch).removeSplitter()
+    upper_deck = Part.makeBox(468.0, 568.0, 8.0, V(-304.0, -284.0, 166.0)).common(chamfer_clip).removeSplitter()
+    aft_ring = Part.makeCylinder(205.0, 12.0, V(-304.8, 0.0, 0.0), V(1, 0, 0)).cut(
+        Part.makeCylinder(175.0, 16.0, V(-306.0, 0.0, 0.0), V(1, 0, 0))
+    )
+    col_solids = []
+    for cx_col, cy_col in ((-296.0, 232.0), (-296.0, -232.0), (38.0, 236.0), (38.0, -236.0)):
+        col_solids.append(Part.makeBox(14.0, 16.0, 475.6, V(cx_col - 7.0, cy_col - 8.0, -309.8)))
+    struct_int = coldplate_nz.fuse(lower_deck).fuse(upper_deck).fuse(aft_ring)
+    for cs in col_solids:
+        struct_int = struct_int.fuse(cs)
+    struct_int = struct_int.removeSplitter()
+
+    # 6b. Zone 1 — Lower -Z Coldplate Avionics Bay (bolted flush at Z = -433.8 mm directly into -Z OSR radiator)
+    pcdu_box = Part.makeBox(210.0, 190.0, 80.0, V(-288.0, -215.0, -433.6))
+    obc_orin_box = Part.makeBox(205.0, 190.0, 72.0, V(-288.0, 20.0, -433.6))
+    sband_box = Part.makeBox(155.0, 150.0, 58.0, V(-58.0, -205.0, -433.6))
+    foc_bank_box = Part.makeBox(155.0, 180.0, 52.0, V(-8.0, 15.0, -433.6))
+
+    # 6c. Zone 2 — Mid-Bay: Full-size 4x RW-12 (Ø260 x 70 mm, beta=65 deg) + Mount Truss + G10-isolated Li-Ion Battery (84x252x280 mm)
     rw_solids = []
+    rw_mounts = []
     beta = math.radians(65.0)
-    for k in range(4):
+    rw_spine = Part.makeBox(56.0, 46.0, 390.0, V(-160.0, -23.0, -295.0))
+    rw_mounts.append(rw_spine)
+    for k, (sy, sz) in enumerate(((1.0, 1.0), (-1.0, 1.0), (-1.0, -1.0), (1.0, -1.0))):
         ang = math.radians(45.0 + 90.0 * k)
         w_dir = V(math.cos(beta), math.sin(beta) * math.cos(ang), math.sin(beta) * math.sin(ang)).normalize()
-        w_ctr = V(-95.0, 115.0 * math.cos(ang), -155.0 + 115.0 * math.sin(ang))
-        rw_solids.append(Part.makeCylinder(75.0, 52.0, w_ctr.sub(w_dir.multiply(26.0)), w_dir))
+        w_ctr = V(-132.0 + (-24.0 if sz > 0 else 24.0), sy * 148.0, -72.0 + sz * 113.5)
+        w_cyl = Part.makeCylinder(130.0, 70.0, w_ctr.sub(w_dir * 35.0), w_dir)
+        rw_solids.append(w_cyl)
+        # Skewed rear mounting boss & strut strictly aft (-w_dir) of wheel (no boolean cut needed -> zero OCCT degeneracy)
+        p_boss = w_ctr.sub(w_dir * 52.0)
+        rw_flange = Part.makeCylinder(46.0, 14.0, p_boss, w_dir)  # ends at -38.0 mm (-3.0 mm clear of w_cyl)
+        p_arm_end = w_ctr.sub(w_dir * 48.0)
+        rw_arm = make_cylinder_between(V(-132.0, 0.0, w_ctr.z), p_arm_end, 11.0)
+        rw_mounts.extend([rw_flange, rw_arm])
+
     rw_comp = rw_solids[0]
     for w in rw_solids[1:]:
         rw_comp = rw_comp.fuse(w)
-    add_part(doc, g_int, "Ref_PropellantTank_COPV", tank, TANK_STEEL, transparency=20)
-    add_part(doc, g_int, "Ref_RW12_Pyramid_65deg_4x", rw_comp, RW_COPPER)
-    add_part(doc, g_int, "Ref_AvionicsBatteryStack", avionics, AVIONICS_SLATE)
+    rw_truss = rw_mounts[0]
+    for m in rw_mounts[1:]:
+        rw_truss = rw_truss.fuse(m)
+    rw_truss = rw_truss.removeSplitter()
 
-    int_comp = Part.makeCompound([tank, avionics, rw_comp])
-    ov_int = int_comp.common(drives_comp).Volume + int_comp.common(shell).Volume + int_comp.common(sens_comp).Volume
-    assert ov_int < 0.1, f"Internal ref overlap {ov_int:.2f} mm^3"
+    batt_box = Part.makeBox(84.0, 252.0, 280.0, V(52.0, -126.0, -140.0))
+    g10_posts = []
+    for sy in (1.0, -1.0):
+        for sz in (1.0, -1.0):
+            g10_posts.append(Part.makeCylinder(9.0, 28.6, V(136.2, sy * 105.0, sz * 115.0), V(1, 0, 0)))
+    batt_iso = g10_posts[0]
+    for gp in g10_posts[1:]:
+        batt_iso = batt_iso.fuse(gp)
+
+    # 6d. Zone 3 — Upper Bay: Right-sized Rafael PEPT-230 (6.0 L, Ø230 mm) + Saddle + Manifold + STIM300 IMU & Bench
+    tank = Part.makeSphere(115.0, V(-165.0, 0.0, 295.0))
+    saddle_ring = Part.makeCylinder(123.0, 12.0, V(-165.0, 0.0, 289.0), V(0, 0, 1)).cut(
+        Part.makeCylinder(115.2, 16.0, V(-165.0, 0.0, 287.0), V(0, 0, 1))
+    )
+    saddle_legs = []
+    for a_deg in (45.0, 135.0, 225.0, 315.0):
+        ar = math.radians(a_deg)
+        lx, ly = -165.0 + 118.0 * math.cos(ar), 118.0 * math.sin(ar)
+        saddle_legs.append(Part.makeCylinder(8.0, 114.6, V(lx, ly, 174.2), V(0, 0, 1)))
+    tank_saddle = saddle_ring
+    for sl in saddle_legs:
+        tank_saddle = tank_saddle.fuse(sl)
+    tank_saddle = tank_saddle.cut(tank).removeSplitter()
+
+    prop_manifold = Part.makeBox(85.0, 120.0, 55.0, V(-30.0, -60.0, 174.2))
+    adcs_bench = Part.makeBox(60.0, 260.0, 12.0, V(-30.0, -130.0, 424.0))
+    stim300_imu = Part.makeBox(39.0, 45.0, 22.0, V(-22.0, -22.5, 401.8))
+
+    # 6e. PGS Thermal Strap (high-k path from +Y DragonEye aft-bottom -> bulkhead slot -> +Y wall -> -Z coldplate)
+    pgs_horiz = Part.makeBox(44.0, 50.0, 12.0, V(152.8, 212.0, -34.0))  # X=152.8..196.8, Y=212..262
+    pgs_vert = Part.makeBox(10.0, 14.0, 400.0, V(148.0, 212.0, -433.6))  # drops down inside chamfered |Y|+|Z|<660
+    pgs_foot = Part.makeBox(16.0, 32.0, 8.0, V(146.0, 198.0, -433.6))
+    pgs_strap = pgs_horiz.fuse(pgs_vert).fuse(pgs_foot).removeSplitter()
+
+    add_part(doc, g_int, "Internal_Structure_DecksRing", struct_int, METAL, transparency=30)
+    add_part(doc, g_int, "Avionics_PCDU", pcdu_box, AVIONICS_SLATE)
+    add_part(doc, g_int, "Avionics_OBC_OrinNX", obc_orin_box, AVIONICS_SLATE)
+    add_part(doc, g_int, "Avionics_SBand", sband_box, TITANIUM)
+    add_part(doc, g_int, "Avionics_FOC_14xElmo", foc_bank_box, ROLL_AMBER)
+    add_part(doc, g_int, "RW12_Pyramid_65deg_4x", rw_comp, RW_COPPER)
+    add_part(doc, g_int, "RW12_MountTruss", rw_truss, TITANIUM)
+    add_part(doc, g_int, "Battery_LiIon_1000Wh", batt_box, CELL_BLUE)
+    add_part(doc, g_int, "Battery_G10_Isolators", batt_iso, FLEX_TEAL)
+    add_part(doc, g_int, "PropTank_PEPT230_6L", tank, TANK_STEEL, transparency=20)
+    add_part(doc, g_int, "PropTank_SaddleMount", tank_saddle, TITANIUM)
+    add_part(doc, g_int, "PropManifold_Valves", prop_manifold, METAL)
+    add_part(doc, g_int, "ADCS_OpticalBench", adcs_bench, TITANIUM)
+    add_part(doc, g_int, "ADCS_STIM300_IMU", stim300_imu, CAM_DARK)
+    add_part(doc, g_int, "ThermalStrap_DragonEye_PGS", pgs_strap, HDRM_RED)
+
+    int_parts = [
+        struct_int, pcdu_box, obc_orin_box, sband_box, foc_bank_box,
+        rw_comp, rw_truss, batt_box, batt_iso, tank, tank_saddle,
+        prop_manifold, adcs_bench, stim300_imu, pgs_strap,
+    ]
+    int_names = [
+        "struct_int", "pcdu", "obc_orin", "sband", "foc_bank",
+        "rw_comp", "rw_truss", "batt_box", "batt_iso", "tank", "tank_saddle",
+        "prop_manifold", "adcs_bench", "stim300", "pgs_strap",
+    ]
+    for i in range(len(int_parts)):
+        for j in range(i + 1, len(int_parts)):
+            ov_ij = int_parts[i].common(int_parts[j]).Volume
+            assert ov_ij < 0.1, f"Internal overlap {int_names[i]} vs {int_names[j]} = {ov_ij:.2f} mm^3"
+    int_comp = Part.makeCompound(int_parts)
+    ov_int = int_comp.common(drives_comp).Volume + int_comp.common(shell).Volume + int_comp.common(sens_comp).Volume + int_comp.common(c_comp).Volume
+    assert ov_int < 0.1, f"Internal ref vs shell/drives/sens/rcs overlap {ov_int:.2f} mm^3"
 
     # 7. Symmetric Standard 15" ESPA envelope (711 X x 610 Y x 965 Z mm from MLB15 aft port x=-362.2)
     espa_box = Part.makeBox(711.0, 610.0, 965.0, V(-HX - SEP_H, -305.0, -482.5))

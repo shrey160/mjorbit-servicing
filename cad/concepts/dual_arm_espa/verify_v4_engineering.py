@@ -235,13 +235,13 @@ def main():
         ("MLI + -Z radiator + thermal straps/heaters",          9.5,  1.20, 360.0),
         ("MLB15.000 sep ring (spacecraft half, 42.2 mm)",       2.2,  1.10, 21.1),
         ("16x 1 N HPGP thrusters + 8 corner clusters",          8.9,  1.15, 362.0),
-        ("Propellant tank (COPV) + lines/valves (dry)",         6.0,  1.20, 240.0),
-        ("Propellant (LMP-103S, 4.5 kg -> ~54 m/s dV)",         4.5,  1.00, 240.0),
-        ("4x RW-12 pyramid + wheel electronics",                21.5, 1.10, 270.0),
-        ("2x Star Trackers (ST-16RT2 / Auriga) + STIM300 IMU",  1.3,  1.10, 250.0),
-        ("RPO Optics (ASC DragonEye 3.6kg + IRIS + bench)",     6.0,  1.15, 595.0),
-        ("Solar cells (+/-Y) + Battery (9.0 kg)",               14.5, 1.15, 290.0),
-        ("Avionics (OBC/Jetson-class/PCDU/Comms)",              13.8, 1.15, 230.0),
+        ("Propellant tank (PEPT-230 6L) + lines/valves (dry)", 3.8,  1.20, 197.0),
+        ("Propellant (LMP-103S, 4.5 kg -> ~54 m/s dV)",         4.5,  1.00, 197.0),
+        ("4x RW-12 pyramid + truss + wheel electronics",        21.5, 1.10, 230.0),
+        ("2x Star Trackers (ST-16RT2 / Auriga) + STIM300 IMU",  1.3,  1.10, 285.0),
+        ("RPO Optics (ASC DragonEye 3.6kg + IRIS + PGS strap)", 6.0,  1.15, 595.0),
+        ("Solar cells (+/-Y) + Battery (9.0 kg, G10 isolated)", 14.5, 1.15, 385.0),
+        ("Avionics (-Z coldplate: OBC/OrinNX/PCDU/S-Band/FOC)", 13.8, 1.15, 260.0),
         ("Harness (bus + dual q0 flex loops)",                  9.5,  1.20, 340.0),
         ("2x Base-Roll q0 drives (CSD-20/TBM2G, 1.4kg ea)",     2.8,  1.20, 495.0),
         ("2x 6-DOF Arms q1-q5 (CSD-14/TBM2G) + Mini45 F/T + jaws + stereo", 13.8, 1.20, 610.0),
@@ -406,7 +406,7 @@ def main():
         return q0, math.degrees(q1), math.degrees(q2), math.degrees(-(q1 + q2)), d, (L1 + L2) - d, e, w
 
     print("\n[CHECK 6] COMPACT v4.2 KINEMATICS, GEO NOZZLE & RECESSED SENSOR FoV (L1=248, L2=208, PALM_X=128 mm)")
-    sensors = [("cam_40deg", (332.0, 222.0, -75.0), 20.0), ("lidar_45deg", (332.0, 222.0, 5.0), 22.5)]
+    sensors = [("cam_40deg", (332.0, 221.0, -77.5), 20.0), ("lidar_45deg", (332.0, 221.5, 20.0), 22.5)]
     cases = [
         ("24in_480mm",    304.8, 800.0, 0.0, 0.0),
         ("24in_GEO_500",  304.8, 820.0, 0.0, 0.0),
