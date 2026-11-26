@@ -15,9 +15,10 @@ Recessing the forward RPO sensors and top-deck star trackers inside the bus skin
    - **Recessed `+Y` Optical Bay (`X = 185..332 mm`):** Embeds an **ASC DragonEye** `128×128` flash LiDAR (`3.6 kg`) and **3D PLUS IRIS** camera (`0.5 kg`) into the `+Y` cheek ahead of the intact `20 mm` front shear bulkhead (`X = 165..185 mm`), with only a `+12 mm` bezel proud of `+320 mm`.
    - **Chamfer/Deck-Recessed `+Z` Star Trackers (`2× ST-16RT2` / `Auriga`):** Optical barrels embedded at `(-130, ±175, 455) mm` tilted `±20°` outward (`+14 mm` baffle rim proud, `70°` clear of `≥ 34°` sun exclusion cones, fitting cleanly inside symmetric `Z ∈ [-482.5, +482.5] mm`).
    - **Sunk Forward RCS Pods (`5 mm` deeper):** Recesses the `55°` canted corner nozzle bells inside the front corners (`XMax = +342.1 mm`), giving a **`704.3 × 606.0 × 937.4 mm`** total stowed envelope (**`+6.7 X, +4.0 Y, +27.6 Z mm`** ESPA margins; `460 mm` internal equipment bay).
-2. **Hybrid Compact Arms (`275 + 235 + 105 mm`) & `480–500 mm` Adaptive Standoff:**
+2. **Hybrid Compact Arms (`275 + 235 mm`) & Form-Closure Marman Gripper (`PALM_X = 74 mm`):**
    - Centerline-flanking shoulders at **`(265, ±70, ±245) mm`** (`rₛ = 254.8 mm`, `20.1"` eq. diameter) eliminate the `24"` `rₚ ≈ 0` singularity while leaving `75 mm` solid top/bottom end structure outside `760 mm` cavities (`z ∈ [-380, +380]`) and `R = 115 mm` swept arc reliefs.
-   - Reaches **`8"`, `15"`, `24"`, `37"`, and `(+80 Y, -50 Z)` `24"` offset** rings at **`480 mm` nominal standoff** (`RING_X = +800 mm`, up to `500 mm` on `24"` GEO targets), leaving **`+130 to +150 mm` axial clearance** past protruding `350 mm` GEO apogee engine bells (`ArianeGroup S400 / LEROS` class), **`39°–65°` elbow dexterity**, and **`0.0°` jaw roll error**.
+   - Each wrist carries a **`14 mm` passive `Ti-6Al-4V` tangential flexure collar (`±5°` hard-stopped)** + **US 10,414,053 form-closure Marman gripper** (`PALM_X = 74 mm` flush datum w/ knitted Inconel pad, twin linear rails/lead screws, crowned multi-diameter inboard finger clearing `8"` walls, and `+38 mm` outboard `20°` wedge hook locking behind the `14 mm` ring lip; `112 mm` total stowed to `Z = ±377 mm`, `X ≤ +312 mm`).
+   - Reaches **`8"`, `15"`, `24"`, and `(+80 Y, -50 Z)` `24"` offset** rings at **`480 mm` nominal standoff** (`RING_X = +800 mm`, up to `500 mm` on `24"` GEO targets) and **`37"`** rings at **`455 mm` standoff** (`RING_X = +775 mm`), preserving **`+105 to +150 mm` axial clearance** past protruding `350 mm` GEO apogee engine bells, **`35°–51°` elbow dexterity**, and **`0.0°` jaw roll error**.
 3. **100% Plume-Free Wheels-Only Detumble & Full-Rank Fault-Tolerant `16 × 1 N` RCS:**
    - **RCS (`55°` fwd / `30°` aft cant):** Rank `6/6` nominally (`+Fx 3.464 N, -Fx 2.294 N, ±Fy 2.822 N, ±Fz 3.247 N`) and across **all 16 single-thruster failures** (`min -Fx = 1.721 N > 1.50 N` `F_MAX`), with braking plumes **`32.5°–74.8°` clear** of `client_p7` (`≥ 30°` NASA keep-out).
    - **Wheels (`4 × RW-12`, `β = 65°` skew):** `Hx = 20.29 N·m·s (0.338 N·m)`, `Hy = Hz = 21.75 N·m·s (0.363 N·m)`. At `2 °/s` (`d = 1.624 m`), total stack detumble demand is **`14.16 N·m·s` (`65.1%` fill)** — below the `80%` unload threshold for plume-free detumble.
@@ -34,7 +35,7 @@ Recessing the forward RPO sensors and top-deck star trackers inside the bus skin
 | **Stowed Envelope (`X × Y × Z`)** | `711 × 610 × 965 mm` | `727 × 606 × 935 mm` *(`+16 mm` over X)* | **`704.3 × 606.0 × 937.4 mm`** *(`+6.7 / +4.0 / +27.6 mm`)* |
 | **Core Bus & Separation Ring** | `CG ≤ 508 mm`, `≤ 220 kg` | `500 × 600 × 900 mm`, `50 mm` ring, `196.2 kg` | **`640 × 600 × 910 mm`**, `42.2 mm` `MLB15`, **`188.5 kg`**, **`CG = 348.4 mm`** |
 | **Shoulder Mount `(x, y, z)`** | — | `(313, 0, -250) mm` | **`(265, ±70, ±245) mm`** (`rₛ = 254.8 mm`) |
-| **Arm Kinematics** | — | 6-DOF single (`550+450+130 mm`) | **2× 4-DOF `Rₓ–Rᵧ–Rᵧ–Rᵧ` (`q₀` + `275+235` + `105 mm` jaw + Ti flex)** |
+| **Arm Kinematics** | — | 6-DOF single (`550+450+130 mm`) | **2× 4-DOF `Rₓ–Rᵧ–Rᵧ–Rᵧ` (`q₀` + `275+235` + `74 mm` palm / `112 mm` form-closure tool)** |
 | **Cavity & Launch Locks** | — | None (exposed on `+X`) | `135 × 120 × 760 mm` + **`R = 115 mm` swept arc** + **`2× NEA 9102`** |
 | **RPO Optics & Star Trackers** | — | Proud `+X` bench + proud `+Z` STs | **Recessed `DragonEye` + `IRIS` (`+12 mm`) & `±20°` STs (`+14 mm`)** |
 | **Nominal Standoff & Cant** | — | `~600 mm` / `50°` fwd RCS | **`480–500 mm`** (`+130–150 mm` past `350 mm` GEO LAE) / **`55°` fwd RCS** |
@@ -65,6 +66,21 @@ Recessing the forward RPO sensors and top-deck star trackers inside the bus skin
 
 *(Even with a conservative flat `20%` dry MGA across every subsystem, wet mass is `193.1 kg` — `+26.9 kg` under `220 kg` and `+6.9 kg` under `200 kg`.)*
 
+### 3.2 Hardware Options Matrix (COTS & Custom-Buildable Alternatives)
+
+| Subsystem | Primary `v4.1` Baseline | COTS / Custom Alternatives & Trade Notes |
+|---|---|---|
+| **15" Separation Ring** | **Rocket Lab `MLB15.000`** (`42.2 mm` height, `~2.2 kg` sep half) | **Beyond Gravity `PAS 381S`** (`79 mm`, `0.98 kg` sep half, `<100 g` clampband; trims bus `X` depth by `37 mm`). |
+| **RPO Flash LiDAR** *(recessed `+Y`)* | **ASC DragonEye** (`128×128`, `45°`, `3.6 kg`, `148 mm` deep, `20–35 W`) | **Custom `128×128` SPAD Flash LiDAR** (`1.8–2.5 kg`, `~110 mm` deep, `15–25 W`); **ASC Peregrine** (`0.45 kg`, lower `128×32` res). *(RVS 3000 at `12–15 kg / 71 W` exceeds 15" ESPA SWaP.)* |
+| **RPO Far-Range Camera** *(recessed `+Y`)* | **3D PLUS IRIS** (`86×72×69 mm`, `367–700 g`, `1.5–5 W`, `12.5°–80°`) | **Redwire Argus V2** (`79×83×65 mm`, `140–250 g`); **Malin ECAM-M50** (`97×78×198 mm`, `590 g`, `1.6–3.3 W`). |
+| **Wrist Stereo Bar (`50 mm`)** *(per jaw)* | **Custom Dual Global-Shutter Stereo PCB** (`2×` `OV9281` / `PYTHON 300` / `IMX287`, `FSIN` `µs`-sync, close-focus `M12` + LED, exact `62 × 24 × 22 mm` fit, HIL-compatible) | **Redwire Argus** remote miniature MIPI heads (`< 100 g/head`, central bus processor); **`2×` 3D PLUS ASTERIA** (`< 35×35×43 mm`, `< 70 g` each, `30–120 fps` GigE/SpaceWire, `~85 mm` paired). *(`SkyFox piCAM` excluded for closed-loop stereo due to `< 1 Hz` UART ASCII-HEX JPEG output and no hardware frame sync — deployment selfie/inspection only.)* |
+| **Star Trackers (`2×`)** *(deck-recessed `±20°`)* | **Rocket Lab `ST-16RT2`** (`185 g`, `62×56×68 mm`, `<0.5 W`, `34°` sun) | **Sodern Auriga** (`225 g`, `66×59×94 mm`, `0.8 W`, `26°/35°` sun); **Jena-Optronik ASTRO CL** (`310 g`, `60×60×129 mm`, `26°` sun). |
+| **Reaction Wheels (`4×`)** *(`65°` pyramid)* | **Rocket Lab `RW-12`** (`12 N·m·s`, `0.2 N·m`, `~5 kg`) | **Bradford W18** (`18 N·m·s`, `0.265 N·m`); **Honeywell HR14-25** (`25 N·m·s`, `7.5 kg / 22 W` ea, `+10 kg` for heavy GEO capture). |
+| **RCS Thrusters (`16 × 1 N`)** | **ECAPS `1N HPGP`** (`LMP-103S`, `204–231 s`, `0.38 kg`) | **Nammo `MHT-1N`** (hydrazine, `228 s`, `<0.45 kg`); **Moog `0.9 N GN2`** cold gas (`70 s`, zero contamination, requires `25–40 L` @ `300 bar`). |
+| **Hollow-Shaft `q₀` & `q₁–q₃` Joints** | **Custom Ti/Al `CSD-20/17/14` + Kollmorgen `TBM2G`** (`1.3–1.4 kg` `q₀`, `Ø20 mm` bore, `57–64 N·m` peak) | COTS housed **Harmonic Drive `SHF-20/17/14-2UH`** (`+1.5 kg` steel mass penalty); **Maxon EC Frameless DT 50/65**. |
+| **Launch Locks / HDRMs (`2×`)** | **EBAD `NEA 9102`** (`130 g`, `Ø43×39 mm`, `17.8 kN`, `12.4×` FoS) | **`2–3×` EBAD Frangibolt `FD04`** per arm (`10 g`, `667 N` preload ea + shear cones); **EBAD TiNi Pin Puller `2545`** (`182 g`, field-resettable shear pin). |
+| **Passive `±5°` Wrist Compliance** | **Custom Wire-EDM `Ti-6Al-4V` RCC/Flexure** (`14 mm`, integral `±5°` stops) + **`5 mm` knitted Inconel mesh** (`Metex/Stop-Choc`) pads | **Riverhawk Free-Flex `5016-400`** crossed-blade pivot (`Ø12.7 mm`, `1,793 N` radial); **Kamatics `KAron™`** PTFE-lined spherical bearing + Inconel wave springs. |
+
 ---
 
 ## 4. Analytical & FreeCAD Solid-Kernel Verification Results
@@ -78,7 +94,7 @@ Recessing the forward RPO sensors and top-deck star trackers inside the bus skin
 | **Close-Range Plumes (`480 mm`)** | `55°` forward cant: `74.79°` to Client CoM, `73.64°` to ring rim, `32.49°` to nearest `1×1 m` client corner (`≥ 30°`) | **PASS** |
 | **`4 × RW-12` (`65°`) Detumble** | `Hx 20.29 / Hy=Hz 21.75 N·m·s`; `2 °/s` stack = `14.16 N·m·s` (`65.1%` fill `< 80%` → **plume-free**) | **PASS** |
 | **Spin-Rate Gate (`hold3 = 3.2 m`)** | Analytic worst-axis ceiling `ω_max = 2.08 °/s` at `F_MAX = 1.5 N` (`1.40 N` needed for `2.00 °/s`) | **PASS** |
-| **Sensor FoV & GEO Nozzle** | `+130.0 mm` (`+150.0 mm` @ `500 mm`) past `350 mm` LAE; `cam_40deg` clears `24"/37"/15"/LargeOff` (`26.2–46.8°`); `lidar_45deg` clears `24"/37"/LargeOff` (`25.3–41.8°`), edging `8"/15"` (`17.8–19.5°`) inside close-range stereo handover; STs `70° ≥ 34°` sun | **PASS** |
+| **Sensor FoV & GEO Nozzle** | `+130.0 mm` (`+150.0 mm` @ `500 mm`) past `350 mm` LAE; `cam_40deg` clears `24"/37"/15"/LargeOff` (`26.2–48.4°`); `lidar_45deg` clears `24"/37"/LargeOff` (`25.3–43.4°`), edging `8"/15"` (`17.8–19.5°`) inside close-range stereo handover; STs `70° ≥ 34°` sun | **PASS** |
 
 ### 4.2 FreeCAD `Part` Solid-Kernel Verification ([dual_arm_concept.FCStd](../cad/concepts/dual_arm_espa/dual_arm_concept.FCStd))
 
@@ -86,14 +102,14 @@ All solid intersections across `Bus`, `Bus_Internal_Ref` (`COPV` + `65° RW` + a
 
 | Configuration | Ring `X` (Standoff) | `q₀` (`+X`) | `q₁` / `q₂` / `q₃` (Arm 1, Arm 2) | Reach / `510 mm` | Roll Err | Overlaps (`mm³`) |
 |---|---|---|---|---|---|---|
-| **`Arms_Stowed`** | — | `0.0°` | Flush inside `760 mm` bays | `704.3 × 606.0 × 937.4 mm` | N/A | **`0.00`** *(all checks)* |
-| **`24"` + `350 mm` GEO Nozzle** | `800 mm` (`+480`) | `-15.9°` | `+35.9° / -64.1° / +28.2°` | `432.9 mm` (`+77.1 mm`) | **`0.0°`** | **`0.00`** *(incl. nozzle)* |
-| **`15"` Ring (`381.0 mm`)** | `800 mm` (`+480`) | `-15.9°` | `+20.4° / -63.2° / +42.9°` | `434.8 mm` (`+75.2 mm`) | **`0.0°`** | **`0.00`** |
-| **`8"` Ring (`203.2 mm`)** | `800 mm` (`+480`) | `-15.9°` | `+4.7° / -53.1° / +48.4°` | `456.5 mm` (`+53.5 mm`) | **`0.0°`** | **`0.00`** |
-| **`37"` + `350 mm` GEO Nozzle** | `800 mm` (`+480`) | `-15.9°` | `+44.5° / -39.1° / -5.4°` | `480.8 mm` (`+29.2 mm`) | **`0.0°`** | **`0.00`** *(incl. nozzle)* |
-| **`24"` LargeOff (`+80 Y, -50 Z`)** | `800 mm` (`+480`) | `+1.9°` / **`-37.6°`** | `+31.0° / -65.2° / +34.2°` *(A1)* · `+36.8° / -63.6° / +26.8°` *(A2)* | `430.1` / `434.0 mm` | **`0.0°`** | **`0.00`** |
+| **`Arms_Stowed`** | — | `0.0°` | Flush inside `760 mm` bays (`Z = ±377 mm`, `X ≤ 312 mm`) | `704.3 × 606.0 × 937.4 mm` | N/A | **`0.00`** *(all checks)* |
+| **`24"` + `350 mm` GEO Nozzle** | `800 mm` (`+480`) | `-15.9°` | `+28.8° / -49.4° / +20.6°` | `463.7 mm` (`+46.3 mm`) | **`0.0°`** | **`0.00`** *(incl. nozzle)* |
+| **`15"` Ring (`381.0 mm`)** | `800 mm` (`+480`) | `-15.9°` | `+14.2° / -48.4° / +34.2°` | `465.5 mm` (`+44.5 mm`) | **`0.0°`** | **`0.00`** |
+| **`8"` Ring (`203.2 mm`)** | `800 mm` (`+480`) | `-15.9°` | `-2.0° / -35.6° / +37.6°` | `485.8 mm` (`+24.2 mm`) | **`0.0°`** | **`0.00`** |
+| **`37"` + `350 mm` GEO Nozzle** | `775 mm` (`+455`) | `-15.9°` | `+42.5° / -35.3° / -7.2°` | `486.2 mm` (`+23.8 mm`) | **`0.0°`** | **`0.00`** *(incl. nozzle)* |
+| **`24"` LargeOff (`+80 Y, -50 Z`)** | `800 mm` (`+480`) | `+1.9°` / **`-37.6°`** | `+24.4° / -50.8° / +26.3°` *(A1)* · `+29.6° / -48.8° / +19.2°` *(A2)* | `461.1` / `464.7 mm` | **`0.0°`** | **`0.00`** |
 
-*(Additional GEO-nozzle mode verified analytically: `24"` @ `500 mm` standoff → `q = (-15.9°, +31.5°, -55.0°, +23.5°)`, `reach = 452.8 / 510 mm (+57.2 mm)`, `+150.0 mm` nozzle clearance.)*
+*(Additional GEO-nozzle mode verified analytically: `24"` @ `500 mm` standoff → `q = (-15.9°, +23.0°, -37.2°, +14.2°)`, `reach = 483.6 / 510 mm (+26.4 mm)`, `+150.0 mm` nozzle clearance.)*
 
 ---
 

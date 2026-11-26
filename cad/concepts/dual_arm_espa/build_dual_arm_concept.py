@@ -53,11 +53,13 @@ ARM_MOUNT_X = 265.0                   # shoulder pitch axis inside 135 mm cavity
 ARM_MOUNT_Z = 245.0                   # r_s = hypot(70, 245) = 254.8 mm (20.1" eq, clear of 15" & 24")
 L1 = 275.0
 L2 = 235.0
-GRIP_LEN = 105.0
+PALM_X = 74.0                         # wrist center to Marman palm datum face (+38 mm fingers -> 112 mm total)
 
-# Target plane standoff & ring radii (mm)
+# Target plane standoffs & ring radii (mm)
 STANDOFF_X = 480.0                    # +480 mm nominal standoff (+130 mm clear of 350 mm GEO LAEs; 500 mm option for 24")
+STANDOFF_X_37 = 455.0                 # +455 mm standoff for 37" ring (+105 mm clear of 350 mm LAE, +24 mm reach margin)
 RING_X = HX + STANDOFF_X              # +800.0 mm from bus center
+RING_X_37 = HX + STANDOFF_X_37        # +775.0 mm for 37" medium/GEO adapter
 R_37IN = 469.9                        # 939.8 mm diameter
 R_24IN = 304.8                        # 609.6 mm diameter (P7 client)
 R_15IN = 190.5                        # 381.0 mm diameter (smallsat / ESPA ring)
@@ -191,7 +193,11 @@ def make_clevis_yoke(cy, cz, u_rad, u_tan):
 
 
 def make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=-1.0):
-    """Build passive Ti flexure collar + compact Marman jaw gripper + outboard 50 mm stereo bar."""
+    """Build passive Ti flexure collar + compact US 10,414,053 form-closure Marman ring tool + stereo bar.
+
+    Gripper frame: +X = approach (u_reach), +Y = radially outward (u_rad), +Z = ring tangent (u_tan).
+    Palm datum rests flush at X = PALM_X (74.0 mm); fingers reach +38 mm past palm (to X = 112.0 mm).
+    """
     R = App.Rotation(u_reach, u_rad, u_tan, "XYZ")
     T = App.Placement(wrist_pos, R)
 
@@ -200,30 +206,71 @@ def make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=-1.0):
         s.Placement = T.multiply(s.Placement)
         return s
 
-    # 14 mm passive Ti-6Al-4V tangential flexure collar (+-5 deg compliance + hard stops)
-    flex_collar = Part.makeCylinder(20.0, 14.0, V(0.0, 0.0, 0.0), V(1.0, 0.0, 0.0))
+    # 1. 14 mm passive Ti-6Al-4V tangential flexure collar (+-5 deg hard-stopped wrist compliance)
+    flex_collar = Part.makeCylinder(19.0, 14.0, V(0.0, 0.0, 0.0), V(1.0, 0.0, 0.0))
 
-    # Main gripper palm & outboard reaction finger (starts at X = 14 mm after flexure collar)
-    palm_base = Part.makeBox(64.0, 56.0, 60.0, V(14.0, -28.0, -30.0))
-    outer_finger = Part.makeBox(36.0, 14.0, 52.0, V(69.0, 18.0, -26.0))
-    housing = palm_base.fuse(outer_finger).removeSplitter()
+    # 2. Structural base housing: back actuator box + central neck + palm datum + knitted Inconel pad
+    back_box = Part.makeBox(22.0, 84.0, 52.0, V(14.0, -40.0, -26.0))
+    neck = Part.makeBox(26.0, 28.0, 44.0, V(36.0, -14.0, -22.0))
+    palm_plate = Part.makeBox(9.5, 34.0, 52.0, V(62.0, -17.0, -26.0))
+    palm_pad = Part.makeBox(2.3, 26.0, 44.0, V(71.5, -16.0, -22.0))  # stops at X=73.8 (0.2 mm off 74.0 ring datum)
+    housing = back_box.fuse(neck).fuse(palm_plate).fuse(palm_pad).removeSplitter()
 
-    in_jaw = Part.makeBox(34.0, 14.0, 48.0, V(71.0, -32.0, -24.0))
-    jaw_pad = Part.makeBox(22.0, 8.0, 40.0, V(80.0, 11.0, -20.0))
-    jaws = in_jaw.fuse(jaw_pad).removeSplitter()
+    # 3. Twin linear guide rails + bearing end stops + non-backdrivable lead screws
+    rail_in = Part.makeBox(5.0, 25.0, 14.0, V(36.0, -39.0, -7.0))
+    rail_hook = Part.makeBox(5.0, 29.0, 14.0, V(36.0, 14.0, -7.0))
+    stop_in = Part.makeBox(12.0, 4.0, 16.0, V(36.0, -43.0, -8.0))
+    stop_hook = Part.makeBox(12.0, 4.0, 16.0, V(36.0, 43.0, -8.0))
+    screw_in = Part.makeCylinder(2.8, 25.0, V(51.0, -39.0, 0.0), V(0.0, 1.0, 0.0))
+    screw_hook = Part.makeCylinder(2.8, 29.0, V(51.0, 14.0, 0.0), V(0.0, 1.0, 0.0))
+    rails = rail_in.fuse(rail_hook).fuse(stop_in).fuse(stop_hook).fuse(screw_in).fuse(screw_hook).removeSplitter()
 
-    z_min = 32.0 if cam_side > 0 else -54.0
-    z_ctr = 43.0 if cam_side > 0 else -43.0
-    cam_bar = Part.makeBox(26.0, 62.0, 22.0, V(22.0, -31.0, z_min))
-    lens_a = Part.makeCylinder(7.0, 10.0, V(48.0, -25.0, z_ctr), V(1, 0, 0))
-    lens_b = Part.makeCylinder(7.0, 10.0, V(48.0, 25.0, z_ctr), V(1, 0, 0))
+    # 4a. Inboard jaw carriage + crowned multi-diameter finger (clears 8" r_in=83.6 mm through 37")
+    car_in = Part.makeBox(20.6, 20.2, 44.0, V(41.2, -39.0, -22.0))
+    crown_face = Part.Face(Part.makePolygon([
+        V(0.0, -30.0, -22.0), V(0.0, -23.2, -22.0),
+        V(0.0, -18.8, -9.0), V(0.0, -18.8, +9.0),
+        V(0.0, -23.2, +22.0), V(0.0, -30.0, +22.0),
+        V(0.0, -30.0, -22.0),
+    ]))
+    finger_in = crown_face.extrude(V(50.0, 0.0, 0.0))
+    finger_in.Placement = App.Placement(V(62.0, 0.0, 0.0), App.Rotation())
+    cham_in = Part.makeBox(10.0, 10.0, 60.0, V(-5.0, -5.0, -30.0))
+    cham_in.rotate(V(0, 0, 0), V(0, 0, 1), 45.0)
+    cham_in.translate(V(112.0, -18.5, 0.0))
+    jaw_in = car_in.fuse(finger_in).cut(Part.makeCylinder(3.2, 24.0, V(51.0, -40.0, 0.0), V(0, 1, 0))).cut(cham_in).removeSplitter()
+
+    # 4b. Outboard hook carriage + finger over lip + 20 deg Marman wedge hook locked behind 14 mm lip
+    car_hook = Part.makeBox(20.6, 22.2, 44.0, V(41.2, 19.8, -22.0))
+    finger_hook = Part.makeBox(50.0, 9.5, 44.0, V(62.0, 20.0, -22.0))
+    wedge_prof = Part.Face(Part.makePolygon([
+        V(88.5, 20.5, -22.0), V(88.5, 18.0, -22.0),
+        V(91.5, 10.5, -22.0), V(104.0, 10.5, -22.0),
+        V(108.0, 20.5, -22.0), V(88.5, 20.5, -22.0),
+    ]))
+    wedge_hook = wedge_prof.extrude(V(0.0, 0.0, 44.0))
+    cham_hook = Part.makeBox(10.0, 10.0, 60.0, V(-5.0, -5.0, -30.0))
+    cham_hook.rotate(V(0, 0, 0), V(0, 0, 1), 45.0)
+    cham_hook.translate(V(112.0, 20.0, 0.0))
+    jaw_hook = car_hook.fuse(finger_hook).fuse(wedge_hook).cut(
+        Part.makeCylinder(3.2, 26.0, V(51.0, 18.0, 0.0), V(0, 1, 0))
+    ).cut(cham_hook).removeSplitter()
+
+    jaws = jaw_in.fuse(jaw_hook).removeSplitter()
+
+    # 5. Outboard 50 mm dual stereo camera bar bolted cleanly onto back housing face
+    z_min = 26.0 if cam_side > 0 else -48.0
+    z_ctr = 37.0 if cam_side > 0 else -37.0
+    cam_bar = Part.makeBox(24.0, 62.0, 22.0, V(14.0, -31.0, z_min))
+    lens_a = Part.makeCylinder(7.0, 8.0, V(38.0, -25.0, z_ctr), V(1, 0, 0))
+    lens_b = Part.makeCylinder(7.0, 8.0, V(38.0, 25.0, z_ctr), V(1, 0, 0))
     lenses = lens_a.fuse(lens_b).removeSplitter()
 
-    return xform(flex_collar), xform(housing), xform(jaws), xform(cam_bar), xform(lenses)
+    return xform(flex_collar), xform(housing), xform(rails), xform(jaws), xform(cam_bar), xform(lenses)
 
 
 def solve_arm_base_roll(base_pos, target_center_yz, ring_r, ring_x, L1_len, L2_len):
-    """Solve 4-DOF (q0 base roll + planar q1, q2 + wrist pitch q3) in radial arm plane."""
+    """Solve 4-DOF (q0 base roll + planar q1, q2 + wrist pitch q3) with palm datum seated on ring_x."""
     vy = base_pos.y - target_center_yz[0]
     vz = base_pos.z - target_center_yz[1]
     r_s = math.hypot(vy, vz)
@@ -236,7 +283,7 @@ def solve_arm_base_roll(base_pos, target_center_yz, ring_r, ring_x, L1_len, L2_l
     q0_rh = math.atan2(-sign_z * u_rad.y, sign_z * u_rad.z)
 
     wrist_pos = V(
-        ring_x - GRIP_LEN,
+        ring_x - PALM_X,
         target_center_yz[0] + ring_r * u_rad.y,
         target_center_yz[1] + ring_r * u_rad.z,
     )
@@ -277,9 +324,10 @@ def build_arm_assembly(
     objs.append(add_part(doc, group, f"{prefix}_ForearmLink", make_cylinder_between(elbow_pos, wrist_pos, 15.0), CARBON))
     objs.append(add_part(doc, group, f"{prefix}_WristPitchJoint", make_axis_joint(wrist_pos, clevis_ut, 20.0, 42.0), TITANIUM))
 
-    flx, h, j, cb, ls = make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=cam_side)
+    flx, h, rl, j, cb, ls = make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=cam_side)
     objs.append(add_part(doc, group, f"{prefix}_PassiveFlexCollar", flx, FLEX_TEAL))
     objs.append(add_part(doc, group, f"{prefix}_Gripper", h, METAL))
+    objs.append(add_part(doc, group, f"{prefix}_GripperRails", rl, TITANIUM))
     objs.append(add_part(doc, group, f"{prefix}_GripperJaws", j, JAW_ORANGE))
     objs.append(add_part(doc, group, f"{prefix}_StereoCamBar", cb, CAM_DARK))
     objs.append(add_part(doc, group, f"{prefix}_StereoLenses", ls, LENS_CYAN))
@@ -576,11 +624,11 @@ def build():
     assert tot_z_min >= -482.5 and tot_z_max <= 482.5, f"Exceeded symmetric ESPA Z limits [{tot_z_min:.1f}, {tot_z_max:.1f}]"
     assert ov_stow < 0.1, f"Stowed overlap {ov_stow:.2f} mm^3!"
 
-    # 9. Deployed scenarios @ 480 mm nominal standoff: 24"+GEO nozzle, 15", 8", 37"+GEO nozzle, and LargeOff (+80 Y, -50 Z)
+    # 9. Deployed scenarios @ 480 mm nominal (455 mm on 37"): 24"+GEO, 15", 8", 37"+GEO, LargeOff
     build_deployed_ring_scenario(doc, g_d24, g_t24, obstacle, "24in", R_24IN, b1, b2, RING_X, (0.0, 0.0), add_geo_nozzle=True)
     build_deployed_ring_scenario(doc, g_d15, g_t15, obstacle, "15in", R_15IN, b1, b2, RING_X, (0.0, 0.0))
     build_deployed_ring_scenario(doc, g_d8, g_t8, obstacle, "8in", R_8IN, b1, b2, RING_X, (0.0, 0.0))
-    build_deployed_ring_scenario(doc, g_d37, g_t37, obstacle, "37in", R_37IN, b1, b2, RING_X, (0.0, 0.0), add_geo_nozzle=True)
+    build_deployed_ring_scenario(doc, g_d37, g_t37, obstacle, "37in", R_37IN, b1, b2, RING_X_37, (0.0, 0.0), add_geo_nozzle=True)
     build_deployed_ring_scenario(doc, g_doff, g_toff, obstacle, "24inLargeOff", R_24IN, b1, b2, RING_X, (80.0, -50.0))
 
     # Default clean view visibility: Bus + ESPA box + 24in deployed (+ 350 mm GEO nozzle ref)

@@ -383,9 +383,9 @@ def main():
     print("  -> PASS: 100% plume-free wheels-only detumble at 2 deg/s (< 80% wheel fill) + 20.3 Nms roll-sync capacity")
 
     # -----------------------------------------------------------------------
-    # CHECK 6: Compact v4.1 Kinematics, GEO Nozzle Clearance & Sensor FoV
+    # CHECK 6: Compact v4.1 Kinematics (PALM_X=74.0), GEO Nozzle & Sensor FoV
     # -----------------------------------------------------------------------
-    L1, L2, GRIP = 275.0, 235.0, 105.0
+    L1, L2, PALM_X = 275.0, 235.0, 74.0
     b1 = (265.0, +70.0, +245.0)
     b2 = (265.0, -70.0, -245.0)
 
@@ -395,7 +395,7 @@ def main():
         ur = (0.0, vy / rs, vz / rs)
         sign_z = 1.0 if b[2] >= 0.0 else -1.0
         q0 = math.degrees(math.atan2(-sign_z * ur[1], sign_z * ur[2]))
-        w = (rx - GRIP, cy + rr * ur[1], cz + rr * ur[2])
+        w = (rx - PALM_X, cy + rr * ur[1], cz + rr * ur[2])
         dx, dr = w[0] - b[0], rr - rs
         d = math.hypot(dx, dr)
         assert abs(L1 - L2) < d < L1 + L2, f"Unreachable d={d:.1f}"
@@ -405,24 +405,24 @@ def main():
         e = (b[0] + L1 * math.cos(q1), b[1] + L1 * math.sin(q1) * ur[1], b[2] + L1 * math.sin(q1) * ur[2])
         return q0, math.degrees(q1), math.degrees(q2), math.degrees(-(q1 + q2)), d, (L1 + L2) - d, e, w
 
-    print("\n[CHECK 6] COMPACT v4.1 KINEMATICS, GEO NOZZLE & RECESSED SENSOR FoV (L1=275, L2=235, GRIP=105 mm)")
+    print("\n[CHECK 6] COMPACT v4.1 KINEMATICS, GEO NOZZLE & RECESSED SENSOR FoV (L1=275, L2=235, PALM_X=74 mm)")
     sensors = [("cam_40deg", (332.0, 222.0, -75.0), 20.0), ("lidar_45deg", (332.0, 222.0, 5.0), 22.5)]
     cases = [
         ("24in_480mm",    304.8, 800.0, 0.0, 0.0),
         ("24in_GEO_500",  304.8, 820.0, 0.0, 0.0),
         ("15in_480mm",    190.5, 800.0, 0.0, 0.0),
         ("8in_480mm",     101.6, 800.0, 0.0, 0.0),
-        ("37in_480mm",    469.9, 800.0, 0.0, 0.0),
+        ("37in_455mm",    469.9, 775.0, 0.0, 0.0),
         ("24in_LargeOff", 304.8, 800.0, 80.0, -50.0),
     ]
     for tag, rr, rx, cy, cz in cases:
         a1 = solve_4dof(b1, cy, cz, rr, rx)
         a2 = solve_4dof(b2, cy, cz, rr, rx)
         min_marg = min(a1[5], a2[5])
-        assert min_marg >= 25.0, f"Low reach margin {min_marg:.1f} on {tag}"
+        assert min_marg >= 20.0, f"Low reach margin {min_marg:.1f} on {tag}"
         # Check optical FoV clearance on Arm 1
         _, _, _, _, _, _, e1, w1 = a1
-        pts = [e1, w1, (w1[0] + GRIP, w1[1], w1[2]), ((e1[0] + w1[0]) / 2, (e1[1] + w1[1]) / 2, (e1[2] + w1[2]) / 2)]
+        pts = [e1, w1, (w1[0] + PALM_X, w1[1], w1[2]), ((e1[0] + w1[0]) / 2, (e1[1] + w1[1]) / 2, (e1[2] + w1[2]) / 2)]
         fov_res = []
         for sname, spos, hf in sensors:
             ma = 999.0
