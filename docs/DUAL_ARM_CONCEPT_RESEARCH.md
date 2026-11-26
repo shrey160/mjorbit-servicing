@@ -1,70 +1,103 @@
-# Dual-Arm Recessed-Cavity Servicer Concept — Engineering Research & Sizing Study
+# Dual-Arm Recessed-Cavity Servicer Concept (`v4.1`) — Engineering Research & Verification Study
 
-**Date:** 26 November 2026 (Updated v3: Compact `240+200 mm` Arms + `z₀ = ±230 mm` + Swept Arc Reliefs + Bulkhead `q₀`)  
+**Date:** 26 November 2026 (`v4.1` Locked Baseline: Hybrid `275+235 mm` Arms + `480–500 mm` Standoff + Recessed Sensors + Sunk `55°` RCS)  
 **CAD Assembly:** [dual_arm_concept.FCStd](../cad/concepts/dual_arm_espa/dual_arm_concept.FCStd) ([build_dual_arm_concept.py](../cad/concepts/dual_arm_espa/build_dual_arm_concept.py))  
-**Scope:** Engineering trade and FreeCAD solid-kernel validation of a **dual diagonally opposed, compact-arm recessed servicer** with **bulkhead-mounted Base-Roll (`q₀`) drives** and **swept circular arc relief pockets** packed strictly inside a **standard 15" ESPA** rideshare envelope (`711 × 610 × 965 mm`), supporting `8"`–`37"` adapter rings and large `(ΔY, ΔZ)` station offsets at **`0.0°` jaw roll misalignment**.
+**Verification Suite:** [verify_v4_engineering.py](../cad/concepts/dual_arm_espa/verify_v4_engineering.py)  
+**Scope:** Hardware-grounded sizing and solid-kernel / analytical verification of an experimental **dual diagonally opposed, compact-arm recessed 15" ESPA servicer** using flight-heritage COTS subsystems (`MLB15.000`, `RW-12`, `ECAPS 1N`, `ASC DragonEye`, `3D PLUS IRIS`, `ST-16RT2`, `NEA 9102`) and custom-buildable hollow-shaft `CSD-20/17` joints + passive `Ti-6Al-4V` wrist flexure compliance.
 
 ---
 
-## 1. Executive Summary & Why Compact Arms + Arc Reliefs + Bulkhead `q₀` Win
+## 1. Executive Summary (`v4.1` Locked Architecture)
 
-Shortening the arms by `~20%` (**`L1 = 240 mm, L2 = 200 mm, GRIP_LEN = 105 mm`**) and moving the shoulders inward to **`(248, ±70, ±230) mm`** paired with **`R = 115 mm` swept circular arc relief pockets** and the vertically centered `+Y` RPO optical bench delivers a major upgrade over both Rev 2 and our earlier v1/v2 layouts:
+Recessing the forward RPO sensors and top-deck star trackers inside the bus skin unlocks enough depth and height inside the **standard 15" ESPA envelope (`711 × 610 × 965 mm`)** to pair a mild link stretch (`275 + 235 mm`) with adaptive `480–500 mm` standoff, solving every `v3` critique cleanly:
 
-1. **Eliminates the `24"` cylindrical singularity (`rₛ = 240.4 mm` sits cleanly between `15"` and `24"` rings):**
-   - Moving the shoulders inward from `z₀ = ±300 → ±230 mm` places the Base-Roll axis radius at **`rₛ = √(70² + 230²) = 240.4 mm`** (equivalent to an `18.9"` diameter) — clear of **`8"` (`rₚ = -138.8 mm`)**, **`15"` (`rₚ = -49.9 mm`)**, **`24"` (`rₚ = +64.4 mm`)**, and **`37"` (`rₚ = +229.5 mm`)**.
-   - On `24"` targets (`client_p7`), `q₀` stays non-singular and rotates jaws in the same directional sense as the ring tangent, while **`4× RW-12` reaction wheels** provide zero-propellant `ωₓ` roll-sync during capture.
-2. **Swept circular arc pockets (`R_ARC = 115 mm`) unlock `~90°+` outboard `q₀` swing:**
-   - Shorter stowed length (`545 mm` vs. `655 mm`) trims the cavities from `800 → 690 mm` (`z ∈ [-345, +345] mm`), restoring `105 mm` of solid bus end structure around the corner RCS thrusters.
-   - Moving the `+Y` RPO optical bench (`bus_lidar` + `bus_cam`) down to mid-height (`y = +215 mm, z ∈ [-83, +83] mm`) frees both outboard shoulder corners for `R = 115 mm` swept circular arc pockets (clipped to `|Y| ≥ 10 mm`), keeping `22–32 mm` clearance from the sensor bench and corner RCS clusters while letting jaws track large **`(+80 Y, -50 Z) mm`** ring offsets (`q₀ = -39.8°`).
-3. **100% Standard 15" ESPA Compliant (`695.0 × 606.0 × 951.1 mm`) & Exact `0.0°` Jaw Roll Error:**
-   - Fits strictly inside `711 × 610 × 965 mm` with **`+16.0 X, +4.0 Y, +13.9 Z mm`** margin while retaining a `600 × 600 × 900 mm` core (`20 mm` structural bulkhead behind cavities, `X ∈ [-275, +150] mm` equipment bay, `R = 44 mm` internal Base-Roll drives at `X = 94..170 mm`).
-4. **~64% lower detumble leverage momentum (`μ d² ω`) vs. Rev 2:**
-   - At `350 mm` nominal bus-face standoff (`RING_X = 650 mm`), CoM-to-CoM lever arm drops to `d ≈ 1.40 m` (`~7.9 N·m·s` reduced-mass momentum at `2 °/s`, total stack `~10.7 N·m·s`), comfortably inside `4× RW-12` capacity (`19.6 N·m·s`) for **plume-free wheels-only detumble**.
+1. **Sensor Recessing Expands Core Bus (`600×600×900` → `640×600×910 mm`) on `42.2 mm` `MLB15.000`:**
+   - **Recessed `+Y` Optical Bay (`X = 185..332 mm`):** Embeds an **ASC DragonEye** `128×128` flash LiDAR (`3.6 kg`) and **3D PLUS IRIS** camera (`0.5 kg`) into the `+Y` cheek ahead of the intact `20 mm` front shear bulkhead (`X = 165..185 mm`), with only a `+12 mm` bezel proud of `+320 mm`.
+   - **Chamfer/Deck-Recessed `+Z` Star Trackers (`2× ST-16RT2` / `Auriga`):** Optical barrels embedded at `(-130, ±175, 455) mm` tilted `±20°` outward (`+14 mm` baffle rim proud, `70°` clear of `≥ 34°` sun exclusion cones, fitting cleanly inside symmetric `Z ∈ [-482.5, +482.5] mm`).
+   - **Sunk Forward RCS Pods (`5 mm` deeper):** Recesses the `55°` canted corner nozzle bells inside the front corners (`XMax = +342.1 mm`), giving a **`704.3 × 606.0 × 937.4 mm`** total stowed envelope (**`+6.7 X, +4.0 Y, +27.6 Z mm`** ESPA margins; `460 mm` internal equipment bay).
+2. **Hybrid Compact Arms (`275 + 235 + 105 mm`) & `480–500 mm` Adaptive Standoff:**
+   - Centerline-flanking shoulders at **`(265, ±70, ±245) mm`** (`rₛ = 254.8 mm`, `20.1"` eq. diameter) eliminate the `24"` `rₚ ≈ 0` singularity while leaving `75 mm` solid top/bottom end structure outside `760 mm` cavities (`z ∈ [-380, +380]`) and `R = 115 mm` swept arc reliefs.
+   - Reaches **`8"`, `15"`, `24"`, `37"`, and `(+80 Y, -50 Z)` `24"` offset** rings at **`480 mm` nominal standoff** (`RING_X = +800 mm`, up to `500 mm` on `24"` GEO targets), leaving **`+130 to +150 mm` axial clearance** past protruding `350 mm` GEO apogee engine bells (`ArianeGroup S400 / LEROS` class), **`39°–65°` elbow dexterity**, and **`0.0°` jaw roll error**.
+3. **100% Plume-Free Wheels-Only Detumble & Full-Rank Fault-Tolerant `16 × 1 N` RCS:**
+   - **RCS (`55°` fwd / `30°` aft cant):** Rank `6/6` nominally (`+Fx 3.464 N, -Fx 2.294 N, ±Fy 2.822 N, ±Fz 3.247 N`) and across **all 16 single-thruster failures** (`min -Fx = 1.721 N > 1.50 N` `F_MAX`), with braking plumes **`32.5°–74.8°` clear** of `client_p7` (`≥ 30°` NASA keep-out).
+   - **Wheels (`4 × RW-12`, `β = 65°` skew):** `Hx = 20.29 N·m·s (0.338 N·m)`, `Hy = Hz = 21.75 N·m·s (0.363 N·m)`. At `2 °/s` (`d = 1.624 m`), total stack detumble demand is **`14.16 N·m·s` (`65.1%` fill)** — below the `80%` unload threshold for plume-free detumble.
+4. **Launch-Ready Mass (`188.5 kg` Spec-MGA), CG (`348.4 mm`) & Passive Wrist Compliance:**
+   - Under `15 g` ESPA loads (`956 N` per `6.5 kg` arm), **`2× EBAD NEA 9102`** separation nuts (`17.8 kN` preload) + cup-cone nests inside the cavities bypass launch loads into the `20 mm` bulkhead with **`12.4×` FoS**.
+   - A `14 mm` monolithic `Ti-6Al-4V` tangential flexure collar (`±5°` hard-stopped) + `5 mm` knitted Inconel wire-mesh jaw pads absorb client nutation without vacuum-outgassing elastomers or a 5th motor.
 
 ---
 
-## 2. Standard 15" ESPA Limits & Architecture Comparison
+## 2. Standard 15" ESPA Limits & Rev-2 vs. `v4.1` Comparison
 
-| Feature / Limit | Standard 15" ESPA | Servicer Rev 2 (Baseline) | Dual-Arm v3 (Compact + Arc + `q₀`) |
+| Feature / Limit | Standard 15" ESPA | Servicer Rev 2 (Baseline) | Dual-Arm `v4.1` (Verified & Locked) |
 |---|---|---|---|
-| **Stowed Envelope (`X × Y × Z`)** | `711 × 610 × 965 mm` | `727 × 606 × 935 mm` *(`+16 mm` over X)* | **`695.0 × 606.0 × 951.1 mm`** *(`+16 / +4 / +13.9 mm` OK)* |
-| **Core bus shell** | — | `500 × 600 × 900 mm` | **`600 × 600 × 900 mm`** (`20 mm` bulkhead + hollowed bay) |
-| **Shoulder mount `(x, y, z)`** | — | `(313, 0, -250) mm` | **`(248, +70, +230)` & `(248, -70, -230) mm`** (`rₛ = 240.4 mm`) |
-| **Arm kinematics per arm** | — | 6-DOF single (`550 + 450 + 130 mm`) | **4-DOF `Rₓ – Rᵧ – Rᵧ – Rᵧ` (`q₀` + `240+200` + `q₃` + `105 mm` jaw)** |
-| **Cavity & relief geometry** | — | None (proud of `+X`) | `130 (X) × 120 (Y) × 690 (Z) mm` + **`R = 115 mm` swept arc** + `10 mm` bevel |
-| **RPO optical bench (`bus_lidar`+`cam`)** | — | `(250, +200, +225..300)` | **`(300, +215, -83..+83) mm`** (vertically centered `+Y` cheek) |
-| **Supported adapter rings** | — | `24"` (`609.6 mm`) single-arc | **`8"`, `15"`, `24"`, `37"`** + large `(ΔY, ΔZ)` offsets at **`0.0°` roll error** |
-| **Detumble leverage (`d`, `2 °/s`)** | — | `d ≈ 2.30 m → 21.9 N·m·s` *(RCS unload)* | **`d ≈ 1.40 m → ~7.9 N·m·s`** *(wheels-only)* |
-| **Grip stereo modules** | — | `1×` (`50 mm`, `128×128`) | **`2×` (`50 mm` outboard per jaw + `203–940 mm` cross-ring)** |
+| **Stowed Envelope (`X × Y × Z`)** | `711 × 610 × 965 mm` | `727 × 606 × 935 mm` *(`+16 mm` over X)* | **`704.3 × 606.0 × 937.4 mm`** *(`+6.7 / +4.0 / +27.6 mm`)* |
+| **Core Bus & Separation Ring** | `CG ≤ 508 mm`, `≤ 220 kg` | `500 × 600 × 900 mm`, `50 mm` ring, `196.2 kg` | **`640 × 600 × 910 mm`**, `42.2 mm` `MLB15`, **`188.5 kg`**, **`CG = 348.4 mm`** |
+| **Shoulder Mount `(x, y, z)`** | — | `(313, 0, -250) mm` | **`(265, ±70, ±245) mm`** (`rₛ = 254.8 mm`) |
+| **Arm Kinematics** | — | 6-DOF single (`550+450+130 mm`) | **2× 4-DOF `Rₓ–Rᵧ–Rᵧ–Rᵧ` (`q₀` + `275+235` + `105 mm` jaw + Ti flex)** |
+| **Cavity & Launch Locks** | — | None (exposed on `+X`) | `135 × 120 × 760 mm` + **`R = 115 mm` swept arc** + **`2× NEA 9102`** |
+| **RPO Optics & Star Trackers** | — | Proud `+X` bench + proud `+Z` STs | **Recessed `DragonEye` + `IRIS` (`+12 mm`) & `±20°` STs (`+14 mm`)** |
+| **Nominal Standoff & Cant** | — | `~600 mm` / `50°` fwd RCS | **`480–500 mm`** (`+130–150 mm` past `350 mm` GEO LAE) / **`55°` fwd RCS** |
+| **Wheels (`4× RW-12`) & Detumble** | — | `β = 70°`, `d ≈ 2.3 m → ~22–26 N·m·s` *(unload)* | **`β = 65°`**, `d = 1.624 m →` **`14.16 N·m·s` (`65.1%`, wheels-only)** |
 
 ---
 
-## 3. Kinematics, Swept Arc Pocket & Capture Protocol
+## 3. Subsystem Mass, CG & Hardware Basis Rollup (`v4.1`)
 
-### 3.1 `Rₓ – Rᵧ – Rᵧ – Rᵧ` Radial Alignment + Swept Arc Relief
-- **Zero-twisting `q₀` Base Roll:** Fixed harmonic drives (`R = 44 mm` barrel, `R = 36 mm` encoder, `X = 94..170 mm`) drive `R = 38 mm` turntables + twin-ear clevis yokes (`X = 171..269 mm`), aiming both `L1 + L2` arm planes directly through any estimated ring center `(cᵧ, c_z)`.
-- **Why the swept arc pocket matters:** Clipping an `R = 115 mm` bore centered at `(±70, ±230)` to `|Y| ≥ 10 mm` gives continuous conical clearance up to **`|q₀| > 45°`**, blending tangentially into `z = ±345 mm` while keeping the `20 mm` central spine (`10 mm` front bevel bridge), corner thrusters, and mid-cheek LiDAR/camera bench untouched.
-- **No-singularity tracking:** With `rₛ = 240.4 mm`, every standard adapter (`8"`, `15"`, `24"`, `37"`) stays `≥ 50 mm` away from `rₚ = 0`. During capture, `4× RW-12` wheels execute zero-propellant `X`-axis roll-sync while `q₁, q₂, q₃` keep the gripper parallel to `+X` under soft impedance (`K ≈ 50–150 N/m`) before dual lead-screw rigidization.
+*(Measured from aft `MLB15.000` port plane `X_port = 0`; `CG` limit `≤ 508.0 mm`; 15" ESPA limit `≤ 220.0 kg` Heritage / `≤ 200.0 kg` SpaceX full-plate.)*
+
+| Subsystem | Hardware Basis | Base (kg) | MGA | Total (kg) | `X_CG` (mm) |
+|---|---|---:|---:|---:|---:|
+| Structure shell + `20 mm` front bulkhead + decks | Custom Al-7075 / honeycomb | `48.0` | `1.20` | `57.6` | `355.0` |
+| MLI + `-Z` radiator + thermal straps/heaters | Kapton MLI + OSR radiator | `9.5` | `1.20` | `11.4` | `360.0` |
+| Separation ring (spacecraft half, `42.2 mm`) | Rocket Lab `MLB15.000` | `2.2` | `1.10` | `2.4` | `21.1` |
+| `16 × 1 N` thrusters + `8` corner pods | ECAPS 1N HPGP class | `8.9` | `1.15` | `10.2` | `362.0` |
+| COPV tank + lines/valves (dry) | Overwrapped tank + valves | `6.0` | `1.20` | `7.2` | `240.0` |
+| Propellant (`~54 m/s` RPO `Δv`) | `LMP-103S` green monoprop | `4.5` | `1.00` | `4.5` | `240.0` |
+| `4 × RW-12` (`65°`) + wheel electronics | Rocket Lab `RW-12` | `21.5` | `1.10` | `23.7` | `270.0` |
+| `2×` Star Trackers + tactical IMU | `ST-16RT2` / `Auriga` + `STIM300` | `1.3` | `1.10` | `1.4` | `250.0` |
+| RPO Optics (recessed bay) | `ASC DragonEye` + `3D PLUS IRIS` | `6.0` | `1.15` | `6.9` | `595.0` |
+| Power (`±Y` arrays + battery) & Avionics/Harness | Body cells + Li-ion + OBC/GPU | `37.8` | `1.16` | `44.0` | `282.0` |
+| `2×` Bulkhead `q₀` Base-Roll drives | `CSD-20` + `TBM2G-060` + `Ø20 mm` bore | `2.8` | `1.20` | `3.4` | `495.0` |
+| `2×` Compact 4-DOF arms + Ti flex + Marman jaws + stereo | `CSD-17/14` + CFRP + `2× 50 mm` stereo | `11.6` | `1.20` | `13.9` | `610.0` |
+| `2×` Non-pyro HDRM launch locks | `EBAD NEA 9102` + cup-cone nests | `1.6` | `1.20` | `1.9` | `620.0` |
+| **TOTAL `v4.1` SERVICER** | **Heritage ESPA margin: `+31.5 kg`** | **`161.7`** | **`1.17`** | **`188.5`** | **`348.4`** |
+
+*(Even with a conservative flat `20%` dry MGA across every subsystem, wet mass is `193.1 kg` — `+26.9 kg` under `220 kg` and `+6.9 kg` under `200 kg`.)*
 
 ---
 
-## 4. Verified FreeCAD v3 Results & Views
+## 4. Analytical & FreeCAD Solid-Kernel Verification Results
 
-All 6 configurations below pass `Part` solid boolean assertions in [dual_arm_concept.FCStd](../cad/concepts/dual_arm_espa/dual_arm_concept.FCStd) with **`0.00 mm³` arm/bus, arm/arm, arm/ring, and internal overlap**:
+### 4.1 Analytical Verification ([verify_v4_engineering.py](../cad/concepts/dual_arm_espa/verify_v4_engineering.py))
 
-| Configuration | Ring `X` (Standoff) | Base Roll `q₀` (RH `+X`) | `q₁` / `q₂` / `q₃` (Arm 1, Arm 2) | Reach / `440 mm` | Jaw Roll Err | Overlaps (`mm³`) |
+| Check | Verified Quantitative Result | Status |
+|---|---|---|
+| **6-DOF RCS (Nominal)** | Rank `6/6`; `+Fx 3.464`, `-Fx 2.294`, `±Fy 2.822`, `±Fz 3.247 N`; `Mx 1.578`, `My 1.144`, `Mz 0.765 N·m` | **PASS** |
+| **6-DOF RCS (All 16 1-Fail)** | Worst single-thruster failure stays Rank `6/6`; min `-Fx = 1.721 N` (`> 1.50 N` `F_MAX`), `Fy 0.894 N`, `Fz 1.808 N` | **PASS** |
+| **Close-Range Plumes (`480 mm`)** | `55°` forward cant: `74.79°` to Client CoM, `73.64°` to ring rim, `32.49°` to nearest `1×1 m` client corner (`≥ 30°`) | **PASS** |
+| **`4 × RW-12` (`65°`) Detumble** | `Hx 20.29 / Hy=Hz 21.75 N·m·s`; `2 °/s` stack = `14.16 N·m·s` (`65.1%` fill `< 80%` → **plume-free**) | **PASS** |
+| **Spin-Rate Gate (`hold3 = 3.2 m`)** | Analytic worst-axis ceiling `ω_max = 2.08 °/s` at `F_MAX = 1.5 N` (`1.40 N` needed for `2.00 °/s`) | **PASS** |
+| **Sensor FoV & GEO Nozzle** | `+130.0 mm` (`+150.0 mm` @ `500 mm`) past `350 mm` LAE; `cam_40deg` clears `24"/37"/15"/LargeOff` (`26.2–46.8°`); `lidar_45deg` clears `24"/37"/LargeOff` (`25.3–41.8°`), edging `8"/15"` (`17.8–19.5°`) inside close-range stereo handover; STs `70° ≥ 34°` sun | **PASS** |
+
+### 4.2 FreeCAD `Part` Solid-Kernel Verification ([dual_arm_concept.FCStd](../cad/concepts/dual_arm_espa/dual_arm_concept.FCStd))
+
+All solid intersections across `Bus`, `Bus_Internal_Ref` (`COPV` + `65° RW` + avionics), `Arms_Stowed`, `GEO_LAE_Nozzle_350mm`, and all 5 deployed configurations report **`0.00 mm³` overlap**:
+
+| Configuration | Ring `X` (Standoff) | `q₀` (`+X`) | `q₁` / `q₂` / `q₃` (Arm 1, Arm 2) | Reach / `510 mm` | Roll Err | Overlaps (`mm³`) |
 |---|---|---|---|---|---|---|
-| **`Arms_Stowed`** | — | `0.0°` | Flush inside `690 mm` bays | `695.0 × 606.0 × 951.1 mm` | N/A | **`0.00`** *(+`16 / +4 / +13.9 mm` ESPA)* |
-| **`24"` Ring (`609.6 mm`)** | `650 mm` (`+350`) | `-16.9°` / `-16.9°` | `+53.3° / -93.1° / +39.8°` | `303.9 mm` (`136.1 mm` margin) | **`0.0°`** | **`0.00`** |
-| **`15"` Ring (`381.0 mm`)** | `650 mm` (`+350`) | `-16.9°` / `-16.9°` | `+31.9° / -94.1° / +62.2°` | `301.2 mm` (`138.8 mm` margin) | **`0.0°`** | **`0.00`** |
-| **`8"` Ring (`203.2 mm`)** | `650 mm` (`+350`) | `-16.9°` / `-16.9°` | `+12.3° / -84.1° / +71.8°` | `327.8 mm` (`112.2 mm` margin) | **`0.0°`** | **`0.00`** |
-| **`37"` Ring (`939.8 mm`)** | `690 mm` (`+390`) | `-16.9°` / `-16.9°` | `+54.3° / -44.4° / -9.9°` | `407.7 mm` (`32.3 mm` margin) | **`0.0°`** | **`0.00`** |
-| **`24"` Large Offset (`+80 Y, -50 Z`)** | `650 mm` (`+350`) | **`+2.0°`** / **`-39.8°`** | `+46.7° / -95.3° / +48.6°` *(A1)* · `+54.2° / -92.6° / +38.4°` *(A2)* | `298.0` / `305.3 mm` | **`0.0°`** | **`0.00`** |
+| **`Arms_Stowed`** | — | `0.0°` | Flush inside `760 mm` bays | `704.3 × 606.0 × 937.4 mm` | N/A | **`0.00`** *(all checks)* |
+| **`24"` + `350 mm` GEO Nozzle** | `800 mm` (`+480`) | `-15.9°` | `+35.9° / -64.1° / +28.2°` | `432.9 mm` (`+77.1 mm`) | **`0.0°`** | **`0.00`** *(incl. nozzle)* |
+| **`15"` Ring (`381.0 mm`)** | `800 mm` (`+480`) | `-15.9°` | `+20.4° / -63.2° / +42.9°` | `434.8 mm` (`+75.2 mm`) | **`0.0°`** | **`0.00`** |
+| **`8"` Ring (`203.2 mm`)** | `800 mm` (`+480`) | `-15.9°` | `+4.7° / -53.1° / +48.4°` | `456.5 mm` (`+53.5 mm`) | **`0.0°`** | **`0.00`** |
+| **`37"` + `350 mm` GEO Nozzle** | `800 mm` (`+480`) | `-15.9°` | `+44.5° / -39.1° / -5.4°` | `480.8 mm` (`+29.2 mm`) | **`0.0°`** | **`0.00`** *(incl. nozzle)* |
+| **`24"` LargeOff (`+80 Y, -50 Z`)** | `800 mm` (`+480`) | `+1.9°` / **`-37.6°`** | `+31.0° / -65.2° / +34.2°` *(A1)* · `+36.8° / -63.6° / +26.8°` *(A2)* | `430.1` / `434.0 mm` | **`0.0°`** | **`0.00`** |
 
-> *Inspection tip:* Open [dual_arm_concept.FCStd](../cad/concepts/dual_arm_espa/dual_arm_concept.FCStd) in FreeCAD and toggle `Bus_SideSlice_Cutaway`, `Bus_Internal_Ref`, `ESPA_Envelope_Ref`, `Arms_Stowed`, `Arms_Deployed_24in`, `Arms_Deployed_15in`, `Arms_Deployed_8in`, `Arms_Deployed_37in`, and `Arms_Deployed_24in_LargeOff` to inspect each configuration interactively.
+*(Additional GEO-nozzle mode verified analytically: `24"` @ `500 mm` standoff → `q = (-15.9°, +31.5°, -55.0°, +23.5°)`, `reach = 452.8 / 510 mm (+57.2 mm)`, `+150.0 mm` nozzle clearance.)*
 
 ---
 
-## 5. Next Step: MuJoCo Dual-Arm Capture Benchmark (`experiments/01_dual_arm_espa`)
-1. Export per-part `.step`/`.stl` geometry (`mm → m`), inertia tensors, and actuator limits (`q₀..q₃` per arm + `4× RW-12` roll-sync) into a `DualArmServicerSpec` / MJCF scene under `experiments/01_dual_arm_espa/`.
-2. Benchmark asynchronous first-touch soft impedance catch + wheel roll-sync on `client_p7` (`0.5–2 °/s` spin) without modifying upstream `simulator/`.
+## 5. Next Step: MuJoCo Dual-Arm Prototype (`experiments/01_dual_arm_espa`)
+
+1. Export per-part `.step`/`.stl` geometry (`mm → m`), `v4.1` inertia tensors, `55°/30°` thruster table, and `65° RW-12` pyramid into a `DualArmServicerSpec` / MJCF scene under `experiments/01_dual_arm_espa/`.
+2. Benchmark asynchronous first-touch soft impedance catch + passive `±5°` wrist flexure compliance + `4× RW-12` roll-sync on `client_p7` and GEO-nozzle variants without modifying upstream `simulator/`.
