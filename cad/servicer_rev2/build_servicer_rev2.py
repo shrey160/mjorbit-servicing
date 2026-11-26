@@ -7,11 +7,10 @@ about X (beta 70 deg: more capacity about Y and Z, where the grasp lever puts th
 the bus collides with the client. The arm (16.55 kg, 6 joints) and the sensors carry over unchanged
 (the ring tool is stage P7.2).
 
-Run inside FreeCAD (MCP execute_code):
-    exec(open(r"C:/Shrey_Projs/robotics/mjorbit/models/servicer_rev_2/build_servicer_rev2.py").read(),
-         {"__file__": r"C:/Shrey_Projs/robotics/mjorbit/models/servicer_rev_2/build_servicer_rev2.py", "__name__": "__main__"})
+Run inside FreeCAD:
+    freecadcmd cad/servicer_rev2/build_servicer_rev2.py
 
-Writes models/servicer_rev_2/: servicer_rev2_bus.FCStd, .step (mm), parts/*.stl (m, chaser frame) and
+Writes assets next to this script: servicer_rev2_bus.FCStd, .step (mm), parts/*.stl (m, chaser frame) and
 servicer_rev2_bus.json: per-part masses (datasheet class, x 1.2 mass growth allowance), the bus mass, CoM
 and inertia from the parts, the nozzle table (site, force direction), the wheel table, the collision
 boxes and the bounding box. make_servicer_rev2.py turns it into the MuJoCo scene.
@@ -27,8 +26,7 @@ import FreeCAD as App
 import MeshPart
 import Part
 
-HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else \
-    r"C:/Shrey_Projs/robotics/mjorbit/models/servicer_rev_2"
+HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
 LIB = os.path.join(os.path.dirname(HERE), "clients", "build_clients.py")
 _ns = {"__file__": LIB, "__name__": "build_clients_lib"}
 exec(open(LIB).read(), _ns)

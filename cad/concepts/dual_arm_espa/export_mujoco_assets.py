@@ -1,4 +1,4 @@
-"""Export v4.1 Dual-Arm ESPA FreeCAD Bus meshes (in metres) and dual_arm_espa_bus.json for MuJoCo."""
+"""Export v4.2 Dual-Arm ESPA FreeCAD Bus meshes (in metres) and dual_arm_espa_bus.json for MuJoCo."""
 import glob
 import json
 import math
@@ -8,8 +8,9 @@ import FreeCAD as App
 import MeshPart
 import Part
 
-CAD_DIR = r"c:/Shrey_Projs/robotics/mjorbit-servicing/cad/concepts/dual_arm_espa"
-OUT_DIR = r"c:/Shrey_Projs/robotics/mjorbit-servicing/experiments/01_dual_arm_espa/assets"
+CAD_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(CAD_DIR)))
+OUT_DIR = os.path.join(REPO_ROOT, "experiments", "01_dual_arm_espa", "assets")
 PARTS_DIR = os.path.join(OUT_DIR, "parts")
 
 

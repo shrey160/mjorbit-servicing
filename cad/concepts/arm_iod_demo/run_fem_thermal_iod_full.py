@@ -9,7 +9,10 @@ import sys
 
 import BOPTools.SplitFeatures
 import FreeCAD as App
-import FreeCADGui as Gui
+try:
+    import FreeCADGui as Gui
+except Exception:
+    Gui = None
 import ObjectsFem
 import Part
 from femmesh import gmshtools
@@ -65,8 +68,10 @@ def run_iod_full_fem():
     frag.Objects = objs
     frag.Mode = "CompSolid"
     doc.recompute()
-    for o in objs:
-        o.ViewObject.Visibility = False
+    if App.GuiUp:
+        for o in objs:
+            if getattr(o, "ViewObject", None):
+                o.ViewObject.Visibility = False
 
     solids = frag.Shape.Solids
     solid_names = {}
@@ -216,31 +221,32 @@ def run_iod_full_fem():
         if rt:
             print(f"  Region {rname:15s}: T_min={min(rt):5.1f} C, T_max={max(rt):5.1f} C")
 
-    pipe = doc.addObject("Fem::FemPostPipeline", "TempPipeline")
-    pipe.load(res)
-    doc.recompute()
-    for o in doc.Objects:
-        if hasattr(o, "ViewObject") and o.ViewObject:
-            o.ViewObject.Visibility = False
-    pipe.ViewObject.Visibility = True
-    pipe.ViewObject.DisplayMode = "Surface"
-    fields = pipe.ViewObject.getEnumerationsOfProperty("Field")
-    if "Temperature" in fields:
-        pipe.ViewObject.Field = "Temperature"
+    if App.GuiUp and Gui is not None:
+        pipe = doc.addObject("Fem::FemPostPipeline", "TempPipeline")
+        pipe.load(res)
+        doc.recompute()
+        for o in doc.Objects:
+            if hasattr(o, "ViewObject") and o.ViewObject:
+                o.ViewObject.Visibility = False
+        pipe.ViewObject.Visibility = True
+        pipe.ViewObject.DisplayMode = "Surface"
+        fields = pipe.ViewObject.getEnumerationsOfProperty("Field")
+        if "Temperature" in fields:
+            pipe.ViewObject.Field = "Temperature"
 
-    gdoc = Gui.getDocument(doc.Name)
-    gdoc.ActiveView.setAnimationEnabled(False)
-    cam = gdoc.ActiveView.getCameraNode()
-    z_cam = V(-0.45, -0.78, -0.43).normalize()
-    x_cam = V(0, 0, 1).cross(z_cam).normalize()
-    y_cam = z_cam.cross(x_cam).normalize()
-    cam.orientation.setValue(*App.Rotation(x_cam, y_cam, z_cam).Q)
-    gdoc.ActiveView.fitAll()
-    Gui.updateGui()
+        gdoc = Gui.getDocument(doc.Name)
+        gdoc.ActiveView.setAnimationEnabled(False)
+        cam = gdoc.ActiveView.getCameraNode()
+        z_cam = V(-0.45, -0.78, -0.43).normalize()
+        x_cam = V(0, 0, 1).cross(z_cam).normalize()
+        y_cam = z_cam.cross(x_cam).normalize()
+        cam.orientation.setValue(*App.Rotation(x_cam, y_cam, z_cam).Q)
+        gdoc.ActiveView.fitAll()
+        Gui.updateGui()
 
-    for out_d in OUT_FIG_DIRS:
-        os.makedirs(out_d, exist_ok=True)
-        gdoc.ActiveView.saveImage(os.path.join(out_d, "fem_iod_full_isolated_hot.png"), 1400, 950, "White")
+        for out_d in OUT_FIG_DIRS:
+            os.makedirs(out_d, exist_ok=True)
+            gdoc.ActiveView.saveImage(os.path.join(out_d, "fem_iod_full_isolated_hot.png"), 1400, 950, "White")
 
     App.closeDocument(doc_name)
 

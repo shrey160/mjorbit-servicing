@@ -10,7 +10,10 @@ import os
 
 import BOPTools.SplitFeatures
 import FreeCAD as App
-import FreeCADGui as Gui
+try:
+    import FreeCADGui as Gui
+except Exception:
+    Gui = None
 import ObjectsFem
 import Part
 from femmesh import gmshtools
@@ -60,8 +63,10 @@ def run_iod_fem_case(doc_name: str, conductive_host: bool, tag: str, transient_s
     frag.Objects = objs
     frag.Mode = "CompSolid"
     doc.recompute()
-    for o in objs:
-        o.ViewObject.Visibility = False
+    if App.GuiUp:
+        for o in objs:
+            if getattr(o, "ViewObject", None):
+                o.ViewObject.Visibility = False
 
     solids = frag.Shape.Solids
     solid_names = {}
@@ -202,34 +207,35 @@ def run_iod_fem_case(doc_name: str, conductive_host: bool, tag: str, transient_s
             if rname == "OrinOBC":
                 print(f"  -> Est. Orin NX SoC Tj (~T_max + 17.5 C @ 25W): {max(rt) + 17.5:5.1f} C (<= 99.0 C throttle limit)")
 
-    pipe = doc.addObject("Fem::FemPostPipeline", "TempPipeline")
-    pipe.load(res)
-    doc.recompute()
-    for o in doc.Objects:
-        if hasattr(o, "ViewObject") and o.ViewObject:
-            o.ViewObject.Visibility = False
-    pipe.ViewObject.Visibility = True
-    pipe.ViewObject.DisplayMode = "Surface"
-    fields = pipe.ViewObject.getEnumerationsOfProperty("Field")
-    if "Temperature" in fields:
-        pipe.ViewObject.Field = "Temperature"
-    elif len(fields) > 1:
-        pipe.ViewObject.Field = fields[1]
-    print("IOD VtkPipeline fields:", fields, "selected:", pipe.ViewObject.Field)
+    if App.GuiUp and Gui is not None:
+        pipe = doc.addObject("Fem::FemPostPipeline", "TempPipeline")
+        pipe.load(res)
+        doc.recompute()
+        for o in doc.Objects:
+            if hasattr(o, "ViewObject") and o.ViewObject:
+                o.ViewObject.Visibility = False
+        pipe.ViewObject.Visibility = True
+        pipe.ViewObject.DisplayMode = "Surface"
+        fields = pipe.ViewObject.getEnumerationsOfProperty("Field")
+        if "Temperature" in fields:
+            pipe.ViewObject.Field = "Temperature"
+        elif len(fields) > 1:
+            pipe.ViewObject.Field = fields[1]
+        print("IOD VtkPipeline fields:", fields, "selected:", pipe.ViewObject.Field)
 
-    gdoc = Gui.getDocument(doc.Name)
-    gdoc.ActiveView.setAnimationEnabled(False)
-    cam = gdoc.ActiveView.getCameraNode()
-    z_cam = V(-0.65, -0.60, -0.46).normalize()
-    x_cam = V(0, 0, 1).cross(z_cam).normalize()
-    y_cam = z_cam.cross(x_cam).normalize()
-    cam.orientation.setValue(*App.Rotation(x_cam, y_cam, z_cam).Q)
-    gdoc.ActiveView.fitAll()
-    Gui.updateGui()
+        gdoc = Gui.getDocument(doc.Name)
+        gdoc.ActiveView.setAnimationEnabled(False)
+        cam = gdoc.ActiveView.getCameraNode()
+        z_cam = V(-0.65, -0.60, -0.46).normalize()
+        x_cam = V(0, 0, 1).cross(z_cam).normalize()
+        y_cam = z_cam.cross(x_cam).normalize()
+        cam.orientation.setValue(*App.Rotation(x_cam, y_cam, z_cam).Q)
+        gdoc.ActiveView.fitAll()
+        Gui.updateGui()
 
-    for out_d in OUT_FIG_DIRS:
-        os.makedirs(out_d, exist_ok=True)
-        gdoc.ActiveView.saveImage(os.path.join(out_d, f"fem_iod_{tag}.png"), 1300, 900, "White")
+        for out_d in OUT_FIG_DIRS:
+            os.makedirs(out_d, exist_ok=True)
+            gdoc.ActiveView.saveImage(os.path.join(out_d, f"fem_iod_{tag}.png"), 1300, 900, "White")
 
     App.closeDocument(doc_name)
     return min(temps_c), max(temps_c), max(disps_mm)

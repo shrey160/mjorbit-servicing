@@ -7,7 +7,7 @@ Tests five core physics milestones (no modifications to simulator/ or src/):
   D. 2.0 deg/s oblique spin capture + 100% wheels-only detumble (< 80% RW-12 fill, 0 plume pulses, 0 collisions).
   E. Stereo-tracked 5 deg pitch + 5 deg yaw 3D-tilted capture (active q3/q4/q5 wrist alignment) + 5.0 N.m high-load hold.
 
-Also saves EGL renders (`dual_arm_mj_capture.png`, `dual_arm_mj_closeup.png`) to the artifact directory if present.
+Also optionally saves EGL renders (`dual_arm_mj_capture.png`, `dual_arm_mj_closeup.png`) when `DUAL_ARM_RENDER_DIR` is set.
 Run in WSL:
   bash scripts/run.sh python experiments/01_dual_arm_espa/bench_dual_arm_capture.py
 """
@@ -45,7 +45,8 @@ from sim.actuator_bus import ActuatorBus  # noqa: E402
 from sim.backend import PlainMujocoBackend  # noqa: E402
 from specs.client_spec import client_p7  # noqa: E402
 
-DEFAULT_ART_DIR = Path("/mnt/c/Users/Shrey/.gemini/antigravity/brain/4379e84e-412f-47f4-9862-cc7cc0bd2a71")
+_env_render = os.environ.get("DUAL_ARM_RENDER_DIR", "").strip()
+DEFAULT_RENDER_DIR = Path(_env_render) if _env_render else None
 
 
 def _quat_from_rotvec(rv: np.ndarray) -> np.ndarray:
@@ -548,7 +549,9 @@ def main() -> None:
 
     check_a_static(bus, spec)
 
-    art_dir = DEFAULT_ART_DIR if DEFAULT_ART_DIR.is_dir() else None
+    art_dir = DEFAULT_RENDER_DIR
+    if art_dir is not None:
+        art_dir.mkdir(parents=True, exist_ok=True)
     run_capture_and_detumble(
         bus, spec,
         "CHECK B: ASYNC FIRST-TOUCH (BLIND 2 deg TILT + 15 mm Y OFFSET) + 3 N.m HOLD",

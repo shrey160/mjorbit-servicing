@@ -290,6 +290,25 @@ HTML_DOC = r"""<!DOCTYPE html>
     page-break-inside: avoid;
   }
   .callout strong { color: #1b365d; }
+  .ref-box {
+    background: #f4f7fb;
+    border: 1px solid #cbd5e1;
+    border-left: 3.5px solid #1b365d;
+    padding: 6.5px 10px;
+    margin: 6px 0 0 0;
+    border-radius: 3px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 8.1pt;
+    line-height: 1.38;
+    color: #1e293b;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .ref-box a {
+    color: #1b365d;
+    font-weight: 600;
+    text-decoration: none;
+  }
 
   /* Booktabs-style tables */
   .table-block {
@@ -988,21 +1007,35 @@ HTML_DOC = r"""<!DOCTYPE html>
   <strong>Next Engineering Milestones:</strong> With both full-servicer and IOD FreeCAD assemblies verified at 0.00&nbsp;mm&sup3; overlap, MuJoCo servicer capture checks A&ndash;E passing, and this preliminary orbital + 3D FEM thermal audit complete, near-term steps are: (1) model boom flexure, differential tilt, and wrist-stereo closed-loop capture in a dedicated IOD MuJoCo scene; (2) build a 1g bench engineering arm + boom unit to validate F/T admittance and stereo calibration; (3) complete ray-traced GMM/TVAC correlation alongside environmental vibration testing; and (4) advance the 45.6&nbsp;kg hosted IOD toward flight readiness.
 </div>
 
+<div class="ref-box">
+  <strong>Reference Repository &amp; Independent Verification:</strong> All FreeCAD B-Rep build scripts, engineering sizing checks, MuJoCo closed-loop physics benchmarks (Checks&nbsp;A&ndash;E), multi-node orbital thermal audit, 3D CalculiX FEM models, P7 orbital baseline runs, and source scripts for this draft are publicly archived for independent reproduction at <a href="https://github.com/shrey160/mjorbit-servicing">https://github.com/shrey160/mjorbit-servicing</a> (see <code>REPRODUCE.md</code>; built on upstream <code>mjorbit</code> at <a href="https://github.com/johnzhang3/mjorbit">https://github.com/johnzhang3/mjorbit</a>).
+</div>
+
 </body>
 </html>
 """
 
 
+def _find_headless_browser() -> Path:
+    for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "msedge"):
+        found = shutil.which(name)
+        if found:
+            return Path(found)
+    candidates = [
+        Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+        Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+        Path("/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"),
+    ]
+    browser = next((b for b in candidates if b.exists()), None)
+    assert browser is not None, "Headless Chrome/Chromium/Edge not found on PATH or standard install locations"
+    return browser
+
+
 def build_pdf() -> None:
     prepare_figures()
     HTML_PATH.write_text(HTML_DOC, encoding="utf-8")
-
-    browsers = [
-        Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
-        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
-    ]
-    browser = next((b for b in browsers if b.exists()), None)
-    assert browser is not None, "Neither Chrome nor Edge found for headless PDF generation"
+    browser = _find_headless_browser()
 
     cmd = [
         str(browser),

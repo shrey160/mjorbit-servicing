@@ -2,6 +2,10 @@
 
 Autonomous orbital servicing, non-cooperative satellite capture, and spacecraft co-design experiments built on **[mjorbit](https://github.com/johnzhang3/mjorbit)**.
 
+> **13-Page Technical Draft PDF:** [`docs/servicer_2_draft/servicer_2_draft.pdf`](docs/servicer_2_draft/servicer_2_draft.pdf)
+> **Independent Verification Guide:** [`REPRODUCE.md`](REPRODUCE.md) (exact commands mapping every table, figure, MuJoCo benchmark, and thermal/FEM run)
+> **Bundled Agent Skills:** [`skills/README.md`](skills/README.md) (FreeCAD CAD workflow & `thermal-sims`)
+
 ---
 
 ## 1. Built on `mjorbit`
@@ -103,18 +107,19 @@ blender --background --python src/viz/render_blender.py -- \
 
 ---
 
-## 4. Next Experiments & Future Configurations
+## 4. Dual-Arm `v4.2` Servicer, Hosted IOD Demo & Next Experiments
 
-P7 gives us a modular testbed (`src/specs/` + `src/sim/` + `src/phases/`) to swap spacecraft geometries, sensors, and controllers cleanly without touching `simulator/` (see [`experiments/README.md`](experiments/README.md)):
+P7 gives us a modular testbed (`src/specs/` + `src/sim/` + `src/phases/`) to swap spacecraft geometries, sensors, and controllers cleanly without touching `simulator/` (see [`experiments/README.md`](experiments/README.md) and [`REPRODUCE.md`](REPRODUCE.md)):
 
-1. **Dual-Arm Recessed ESPA Servicer** ([FreeCAD Model](cad/concepts/dual_arm_espa/dual_arm_concept.FCStd) · [Build Script](cad/concepts/dual_arm_espa/build_dual_arm_concept.py) · [Research](docs/DUAL_ARM_CONCEPT_RESEARCH.md))
-   A centerline (`y = +/-70 mm`) recessed dual-arm concept (`600 x 600 x 900 mm` bus, **`695.0 x 606.0 x 951.1 mm`** stowed inside standard 15" ESPA `711 x 610 x 965 mm`) supporting **`8"`–`37"`** adapter rings, soft impedance dual-arm closing, and ~59% lower reduced-mass detumble momentum for **plume-free wheels-only detumble**.
-2. **Multi-Client & High-Tumble Envelopes** ([`src/specs/client_spec.py`](src/specs/client_spec.py))
-   Symmetric double-wing (`client_double_wing`), larger inertias, passive roll compliance, and compliant `3–6 °/s` tumbling/nutating capture policies trained on `mjorbit_warp`.
-3. **Photorealistic PBR Data & Dark-Room HIL Anchor** ([Data Research](docs/COSMOS_SYNTHETIC_DATA_RESEARCH.md))
-   Decoupled MuJoCo/Warp trajectories re-rendered with Cycles PBR, space optics, and simulated event-camera streams, anchored against a low-cost physical dark-room stereo/LiDAR testbed.
-4. **Unknown-Object 3DGS & Multi-Agent Swarms** ([Evolution & Critique](docs/EVOLUTION_AND_CRITIQUE.md))
-   Online 3D Gaussian Splatting reconstruction for unknown/damaged targets, in-loop thruster/sensor fault survival, and Inspector + Servicer distributed CBF swarms.
+1. **Dual-Arm Recessed 15" ESPA Servicer (`v4.2`)** ([FreeCAD Model](cad/concepts/dual_arm_espa/dual_arm_concept.FCStd) · [Build](cad/concepts/dual_arm_espa/build_dual_arm_concept.py) · [Verification](cad/concepts/dual_arm_espa/verify_v4_engineering.py) · [MuJoCo Bench](experiments/01_dual_arm_espa/bench_dual_arm_capture.py))
+   Centerline (`Y = +/-70 mm`) recessed dual-arm baseline (`640 x 600 x 910 mm` core bus, **`704.3 x 606.0 x 937.4 mm`** stowed inside standard 15" ESPA `711 x 610 x 965 mm`, `188.5 kg` Spec-MGA, `CG = 357.7 mm`), two 6-DOF Cardan-Roll arms (`0.00 mm^3` solid overlap across **`8"`–`37"`** rings past `350 mm` GEO nozzles), and closed-loop MuJoCo capture Checks A–E passing (**2.0 deg/s wheels-only detumble at 69.3% RW fill, 0 bad contacts, 0 braking plume pulses**, active `5p+5y` wrist alignment).
+2. **Ultra-Shallow Hosted-Payload IOD Demo (`arm_iod_demo`)** ([FreeCAD Model](cad/concepts/arm_iod_demo/arm_iod_demo.FCStd) · [Build](cad/concepts/arm_iod_demo/build_arm_iod_demo.py) · [Verification](cad/concepts/arm_iod_demo/verify_arm_iod_demo.py))
+   A **`273.0 x 520.0 x 840.0 mm`** (`38.0 kg` base / `45.6 kg` +20% MGA) hosted-payload testbed exercising identical 6-DOF arm hardware against a 15" target ring deployed on four rollable bistable CFRP booms (`8.2 Hz` first mode, `+5 deg` differential pitch tilt, wrist-stereo + Mini45 F/T capture).
+3. **Preliminary Thermal Audit (`Orin NX 25 W` + Rad-Hard OBC `4–6 W`)** ([Orbital TMM](cad/concepts/thermal_audit.py) · [Unit Smoke Test](cad/concepts/verify_freecad_ccx_units.py))
+   Calibrated to ECSS-E-ST-31C, NASA MSFC TM-2001-211221, NASA GSFC GOLD Rules, and Gilmore (`0.195 m^2` `v4.2` / `0.101 m^2` IOD `-Z` OSR, bolted DragonEye CCHP strap). Zero hard-limit failures across LEO, GEO, and conductive/isolated IOD cases (`<= 59.7%` cold heater duty), verified in coupled 3D `Gmsh` + `CalculiX v2.22` FEM (`run_fem_thermal_*.py`, max CTE shift `0.0464 mm`).
+4. **Next Simulation & Control Milestones**
+   - Build `experiments/02_arm_iod_demo/` (compliant 4-boom dynamics, independent `+5 deg` tilt, wrist-stereo + F/T capture/retract).
+   - 12-DOF coordinated free-floating dual-arm control, `v4.2` orbital autonomy (`far_leg` -> `release` w/ `Orin NX` burst gating), and 12-DOF dual-arm residual RL on `mjorbit_warp`.
 
 ---
 
@@ -124,8 +129,16 @@ P7 gives us a modular testbed (`src/specs/` + `src/sim/` + `src/phases/`) to swa
 mjorbit-servicing/
 ├── simulator/            # Pinned upstream johnzhang3/mjorbit submodule (unmodified)
 ├── scripts/run.sh        # Portable launcher (MJORBIT_DIR or ./simulator + pixi rl env)
+├── REPRODUCE.md          # Independent verification guide & claim-to-command traceability
+├── skills/               # Bundled FreeCAD CAD workflow & thermal-sims agent skills
 ├── assets/               # Pre-compiled servicer_rev2 & client_p7 MuJoCo XMLs and JSON specs
 ├── weights/              # Pre-trained BusNet_orb, StereoNet_orb, and G3 PPO checkpoints
+├── cad/
+│   ├── concepts/         # v4.2 dual-arm ESPA, arm_iod_demo, thermal_audit.py & 3D CalculiX FEM
+│   ├── servicer_rev2/    # P7 Rev-2 FreeCAD/STEP models & build scripts
+│   └── clients/          # client_p7 FreeCAD/STEP model
+├── experiments/
+│   └── 01_dual_arm_espa/ # v4.2 dual-arm MuJoCo scene, spec & Checks A-E benchmark
 ├── src/
 │   ├── _paths.py         # Centralized repo, asset, weight, runs, and MJORBIT_DIR resolver
 │   ├── specs/            # Typed ClientSpec, ServicerSpec, and MissionConfig dataclasses
@@ -139,7 +152,8 @@ mjorbit-servicing/
 │   ├── rl/               # Batched GPU reach environment (mjorbit_warp), Torch IK, G3 PPO
 │   ├── checks/           # Parity tests, sensor/grasp benches, fault injection, truth audits
 │   └── viz/              # 5-view replay recorder, HTML/Three.js console, MP4 & Blender Cycles
-├── cad/                  # FreeCAD (.FCStd), STEP (.step) models & build scripts (Rev-2, client_p7, dual-arm concept)
-├── experiments/          # Configuration roadmap & new experiment workspace
-└── docs/                 # P7 spec, hardware studies, synthetic data report, evolution critique
+└── docs/
+    ├── servicer_2_draft/ # 13-page Technical Design Draft PDF & cross-platform builder
+    ├── media/            # Verified CAD, MuJoCo, and thermal/FEM renders
+    └── *.md              # P7 spec, hardware studies, synthetic data report, evolution critique
 ```

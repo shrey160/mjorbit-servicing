@@ -18,7 +18,10 @@ import sys
 
 import BOPTools.SplitFeatures
 import FreeCAD as App
-import FreeCADGui as Gui
+try:
+    import FreeCADGui as Gui
+except Exception:
+    Gui = None
 import ObjectsFem
 import Part
 from femmesh import gmshtools
@@ -115,8 +118,10 @@ def build_v4_fem_doc(
     frag.Objects = part_objs
     frag.Mode = "CompSolid"
     doc.recompute()
-    for po in part_objs:
-        po.ViewObject.Visibility = False
+    if App.GuiUp:
+        for po in part_objs:
+            if getattr(po, "ViewObject", None):
+                po.ViewObject.Visibility = False
 
     solids = frag.Shape.Solids
     print(f"[{tag}] BooleanFragments CompSolid created: {len(solids)} solids (valid={frag.Shape.isValid()})")
@@ -302,32 +307,33 @@ def build_v4_fem_doc(
             if rname == "AvionicsNZ":
                 print(f"  -> Est. Orin NX SoC Tj (~T_max + 17.5 C @ 25W): {max(r_temps) + 17.5:5.1f} C (<= 99.0 C throttle limit)")
 
-    # Render VTK Post-Processing Temperature Contour cleanly from +X/+Y/-Z
-    pipe = doc.addObject("Fem::FemPostPipeline", "TempPipeline")
-    pipe.load(res)
-    doc.recompute()
-    for o in doc.Objects:
-        if hasattr(o, "ViewObject") and o.ViewObject:
-            o.ViewObject.Visibility = False
-    pipe.ViewObject.Visibility = True
-    pipe.ViewObject.DisplayMode = "Surface"
-    fields = pipe.ViewObject.getEnumerationsOfProperty("Field")
-    if "Temperature" in fields:
-        pipe.ViewObject.Field = "Temperature"
+    # Render VTK Post-Processing Temperature Contour cleanly from +X/+Y/-Z (GUI mode only)
+    if App.GuiUp and Gui is not None:
+        pipe = doc.addObject("Fem::FemPostPipeline", "TempPipeline")
+        pipe.load(res)
+        doc.recompute()
+        for o in doc.Objects:
+            if hasattr(o, "ViewObject") and o.ViewObject:
+                o.ViewObject.Visibility = False
+        pipe.ViewObject.Visibility = True
+        pipe.ViewObject.DisplayMode = "Surface"
+        fields = pipe.ViewObject.getEnumerationsOfProperty("Field")
+        if "Temperature" in fields:
+            pipe.ViewObject.Field = "Temperature"
 
-    gdoc = Gui.getDocument(doc.Name)
-    gdoc.ActiveView.setAnimationEnabled(False)
-    cam = gdoc.ActiveView.getCameraNode()
-    z_cam = V(0.55, 0.72, -0.42).normalize()
-    x_cam = V(0, 0, 1).cross(z_cam).normalize()
-    y_cam = z_cam.cross(x_cam).normalize()
-    cam.orientation.setValue(*App.Rotation(x_cam, y_cam, z_cam).Q)
-    gdoc.ActiveView.fitAll()
-    Gui.updateGui()
+        gdoc = Gui.getDocument(doc.Name)
+        gdoc.ActiveView.setAnimationEnabled(False)
+        cam = gdoc.ActiveView.getCameraNode()
+        z_cam = V(0.55, 0.72, -0.42).normalize()
+        x_cam = V(0, 0, 1).cross(z_cam).normalize()
+        y_cam = z_cam.cross(x_cam).normalize()
+        cam.orientation.setValue(*App.Rotation(x_cam, y_cam, z_cam).Q)
+        gdoc.ActiveView.fitAll()
+        Gui.updateGui()
 
-    for out_d in OUT_FIG_DIRS:
-        os.makedirs(out_d, exist_ok=True)
-        gdoc.ActiveView.saveImage(os.path.join(out_d, f"fem_v4_{tag}.png"), 1300, 900, "White")
+        for out_d in OUT_FIG_DIRS:
+            os.makedirs(out_d, exist_ok=True)
+            gdoc.ActiveView.saveImage(os.path.join(out_d, f"fem_v4_{tag}.png"), 1300, 900, "White")
 
     App.closeDocument(doc_name)
     return min(temps_c), max(temps_c), max(disps_mm)

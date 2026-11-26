@@ -14,3 +14,7 @@ assets/pbr_assets/
 *.log.jsonl
 .DS_Store
 Thumbs.db
+
+# Draft PDF build intermediates (rebuilt by docs/servicer_2_draft/build_pdf.py)
+docs/servicer_2_draft/figures/
+docs/servicer_2_draft/servicer_2_draft.html
