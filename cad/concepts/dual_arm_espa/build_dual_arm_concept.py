@@ -48,16 +48,16 @@ CAV_H = 760.0                         # Z height of cavity (-380..+380; 75 mm en
 CAV_Y = 70.0                          # Centerline-flanking Y centers (+-70 mm -> 20 mm central spine)
 R_ARC = 115.0                         # Swept circular arc relief radius around each shoulder (245 + 115 = 360 <= 380)
 
-# Compact v4.1 arm & bulkhead Base-Roll geometry (mm)
+# Compact v4.2 6-DOF arm & bulkhead Base-Roll + Cardan-Roll wrist geometry (mm)
 ARM_MOUNT_X = 265.0                   # shoulder pitch axis inside 135 mm cavity
 ARM_MOUNT_Z = 245.0                   # r_s = hypot(70, 245) = 254.8 mm (20.1" eq, clear of 15" & 24")
-L1 = 275.0
-L2 = 235.0
-PALM_X = 74.0                         # wrist center to Marman palm datum face (+38 mm fingers -> 112 mm total)
+L1 = 248.0
+L2 = 208.0
+PALM_X = 128.0                        # 3-DOF wrist + Mini45 F/T + palm datum (+38 mm fingers -> 166 mm total)
 
 # Target plane standoffs & ring radii (mm)
 STANDOFF_X = 480.0                    # +480 mm nominal standoff (+130 mm clear of 350 mm GEO LAEs; 500 mm option for 24")
-STANDOFF_X_37 = 455.0                 # +455 mm standoff for 37" ring (+105 mm clear of 350 mm LAE, +24 mm reach margin)
+STANDOFF_X_37 = 450.0                 # +450 mm standoff for 37" ring (+100 mm clear of 350 mm LAE, +22 mm reach margin)
 RING_X = HX + STANDOFF_X              # +800.0 mm from bus center
 RING_X_37 = HX + STANDOFF_X_37        # +775.0 mm for 37" medium/GEO adapter
 R_37IN = 469.9                        # 939.8 mm diameter
@@ -159,7 +159,7 @@ def make_axis_joint(center, axis_dir, radius, length):
 
 
 def make_clevis_yoke(cy, cz, u_rad, u_tan):
-    """Build rotating turntable hub (X=186..208), amber roll collar, and twin-ear clevis yoke."""
+    """Build rotating turntable hub (X=186..208), amber q0 collar, and double-supported CSD-20 straddle clevis."""
     cx_vec = V(1.0, 0.0, 0.0)
     R = App.Rotation(cx_vec, u_rad, u_tan, "XYZ")
     T = App.Placement(V(0.0, cy, cz), R)
@@ -170,17 +170,19 @@ def make_clevis_yoke(cy, cz, u_rad, u_tan):
         return s
 
     hub_main = Part.makeCylinder(38.0, 22.0, V(CAV_XMIN + 1.0, 0.0, 0.0), cx_vec)
-    hub_step = Part.makeCylinder(38.0, 12.0, V(CAV_XMIN + 23.0, 0.0, 0.0), cx_vec)
+    hub_step = Part.makeCylinder(38.0, 10.0, V(CAV_XMIN + 23.0, 0.0, 0.0), cx_vec)
 
-    ear_prof = Part.Face(Part.makePolygon([
-        V(215.0, -21.0, 0.0), V(ARM_MOUNT_X, -21.0, 0.0),
-        V(ARM_MOUNT_X + 21.0, -13.0, 0.0), V(ARM_MOUNT_X + 21.0, 13.0, 0.0),
-        V(ARM_MOUNT_X, 21.0, 0.0), V(215.0, 21.0, 0.0), V(215.0, -21.0, 0.0),
-    ]))
-    ear_p = ear_prof.extrude(V(0.0, 0.0, 10.0))
-    ear_p.Placement = App.Placement(V(0.0, 0.0, 28.0), App.Rotation())
-    ear_n = ear_prof.extrude(V(0.0, 0.0, 10.0))
-    ear_n.Placement = App.Placement(V(0.0, 0.0, -38.0), App.Rotation())
+    # +t Stator-Mount Ear (t in [+23.5, +32.0]): strut + R_out=41.5 stator clamping collar w/ R_in=37.2 through-bore
+    ear_p_strut = Part.makeBox(ARM_MOUNT_X - 215.0, 42.0, 8.5, V(215.0, -21.0, 23.5))
+    ear_p_ring = Part.makeCylinder(41.5, 8.5, V(ARM_MOUNT_X, 0.0, 23.5), V(0.0, 0.0, 1.0))
+    ear_p_bore = Part.makeCylinder(37.2, 12.0, V(ARM_MOUNT_X, 0.0, 22.0), V(0.0, 0.0, 1.0))
+    ear_p = ear_p_strut.fuse(ear_p_ring).cut(ear_p_bore).removeSplitter()
+
+    # -t Idle Bearing Ear (t in [-32.0, -23.5]): strut + R=26 boss + R=18 external bearing cap (t in [-34.5, -32.0])
+    ear_n_strut = Part.makeBox(ARM_MOUNT_X - 215.0, 42.0, 8.5, V(215.0, -21.0, -32.0))
+    ear_n_boss = Part.makeCylinder(26.0, 8.5, V(ARM_MOUNT_X, 0.0, -32.0), V(0.0, 0.0, 1.0))
+    ear_n_cap = Part.makeCylinder(18.0, 2.5, V(ARM_MOUNT_X, 0.0, -34.5), V(0.0, 0.0, 1.0))
+    ear_n = ear_n_strut.fuse(ear_n_boss).fuse(ear_n_cap).removeSplitter()
 
     turntable = xform(hub_main.fuse(hub_step).fuse(ear_p).fuse(ear_n).removeSplitter())
 
@@ -192,11 +194,176 @@ def make_clevis_yoke(cy, cz, u_rad, u_tan):
     return turntable, roll_ring
 
 
-def make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=-1.0):
-    """Build passive Ti flexure collar + compact US 10,414,053 form-closure Marman ring tool + stereo bar.
+def make_shoulder_joint(base_pos, upper_dir, clevis_ur, clevis_ut):
+    """Build hollow-shaft CSD-20-2A + TBM2G-06013 shoulder actuator: stator, amber cross-roller collar & output socket."""
+    T_c = App.Placement(base_pos, App.Rotation(V(1.0, 0.0, 0.0), clevis_ur, clevis_ut, "XYZ"))
+    T_u = App.Placement(base_pos, App.Rotation(upper_dir, clevis_ut.cross(upper_dir).normalize(), clevis_ut, "XYZ"))
+
+    def xc(sh):
+        s = sh.copy()
+        s.Placement = T_c.multiply(s.Placement)
+        return s
+
+    def xu(sh):
+        s = sh.copy()
+        s.Placement = T_u.multiply(s.Placement)
+        return s
+
+    # Fixed to +t clevis ear: R=37.0 main barrel (t in [+12.5,+40.5]) + R=31.5 cap (+40.5..+47.5) + R=14 gland w/ R=9 bore
+    st_main = Part.makeCylinder(37.0, 28.0, V(0.0, 0.0, 12.5), V(0.0, 0.0, 1.0))
+    st_cap = Part.makeCylinder(31.5, 7.0, V(0.0, 0.0, 40.5), V(0.0, 0.0, 1.0))
+    st_gland = Part.makeCylinder(14.0, 2.0, V(0.0, 0.0, 47.5), V(0.0, 0.0, 1.0))
+    st_bore = Part.makeCylinder(9.0, 4.5, V(0.0, 0.0, 45.5), V(0.0, 0.0, 1.0))
+    sh_stator = xc(st_main.fuse(st_cap).fuse(st_gland).cut(st_bore).removeSplitter())
+
+    # Visible cross-roller bearing seam collar (t in [+9.5, +12.2])
+    sh_collar = xc(
+        Part.makeCylinder(37.8, 2.7, V(0.0, 0.0, 9.5), V(0.0, 0.0, 1.0)).cut(
+            Part.makeCylinder(35.4, 4.0, V(0.0, 0.0, 9.0), V(0.0, 0.0, 1.0))
+        ).removeSplitter()
+    )
+
+    # Rotating output drum (R=35.0, t in [-23.0,+9.2]) + tapered cheeks (t<=+9.2) + tube socket (d in [38.5,54.0])
+    out_drum = Part.makeCylinder(35.0, 32.2, V(0.0, 0.0, -23.0), V(0.0, 0.0, 1.0))
+    out_cheek = Part.makeBox(44.0, 40.0, 25.2, V(0.0, -20.0, -16.0))
+    out_sock = Part.makeCylinder(22.5, 15.5, V(38.5, 0.0, 0.0), V(1.0, 0.0, 0.0))
+    sh_output = xu(out_drum.fuse(out_cheek).fuse(out_sock).removeSplitter())
+
+    ov_sh = (
+        sh_stator.common(sh_collar).Volume
+        + sh_stator.common(sh_output).Volume
+        + sh_collar.common(sh_output).Volume
+    )
+    assert ov_sh < 0.1, f"Shoulder joint internal overlap {ov_sh:.2f} mm^3"
+    return sh_stator, sh_collar, sh_output
+
+
+def make_elbow_joint(elbow_pos, upper_dir, forearm_dir, clevis_ut):
+    """Build hollow-shaft CSD-17-2A + TBM2G-06008 elbow actuator: input clevis, stator, amber collar & forearm socket."""
+    T_in = App.Placement(elbow_pos, App.Rotation(upper_dir, clevis_ut.cross(upper_dir).normalize(), clevis_ut, "XYZ"))
+    T_out = App.Placement(elbow_pos, App.Rotation(forearm_dir, clevis_ut.cross(forearm_dir).normalize(), clevis_ut, "XYZ"))
+
+    def xi(sh):
+        s = sh.copy()
+        s.Placement = T_in.multiply(s.Placement)
+        return s
+
+    def xo(sh):
+        s = sh.copy()
+        s.Placement = T_out.multiply(s.Placement)
+        return s
+
+    # Input clevis fixed to UpperLink: socket (d in [-52,-34]) + transition (d in [-42,-34]) + twin straddle ears
+    el_sock_in = Part.makeCylinder(22.0, 18.0, V(-52.0, 0.0, 0.0), V(1.0, 0.0, 0.0))
+    el_trans = Part.makeBox(8.0, 36.0, 54.0, V(-42.0, -18.0, -27.0))
+    ear_p = Part.makeBox(36.0, 36.0, 7.5, V(-36.0, -18.0, 19.5)).fuse(
+        Part.makeCylinder(36.5, 7.5, V(0.0, 0.0, 19.5), V(0.0, 0.0, 1.0))
+    ).cut(Part.makeCylinder(32.7, 10.5, V(0.0, 0.0, 18.0), V(0.0, 0.0, 1.0)))
+    ear_n = Part.makeBox(36.0, 36.0, 7.5, V(-36.0, -18.0, -27.0)).fuse(
+        Part.makeCylinder(22.0, 7.5, V(0.0, 0.0, -27.0), V(0.0, 0.0, 1.0))
+    ).fuse(Part.makeCylinder(15.0, 2.5, V(0.0, 0.0, -29.5), V(0.0, 0.0, 1.0)))
+    el_clevis = xi(el_sock_in.fuse(el_trans).fuse(ear_p).fuse(ear_n).removeSplitter())
+
+    # Stator nested in +t ear: R=32.5 main barrel (t in [+12.5,+37.5]) + R=27.0 cap + R=12 gland w/ R=7.5 bore
+    st_main = Part.makeCylinder(32.5, 25.0, V(0.0, 0.0, 12.5), V(0.0, 0.0, 1.0))
+    st_cap = Part.makeCylinder(27.0, 6.5, V(0.0, 0.0, 37.5), V(0.0, 0.0, 1.0))
+    st_gland = Part.makeCylinder(12.0, 2.0, V(0.0, 0.0, 44.0), V(0.0, 0.0, 1.0))
+    st_bore = Part.makeCylinder(7.5, 4.5, V(0.0, 0.0, 42.0), V(0.0, 0.0, 1.0))
+    el_stator = xi(st_main.fuse(st_cap).fuse(st_gland).cut(st_bore).removeSplitter())
+
+    # Cross-roller bearing seam collar (t in [+9.5, +12.2])
+    el_collar = xi(
+        Part.makeCylinder(33.2, 2.7, V(0.0, 0.0, 9.5), V(0.0, 0.0, 1.0)).cut(
+            Part.makeCylinder(30.8, 4.0, V(0.0, 0.0, 9.0), V(0.0, 0.0, 1.0))
+        ).removeSplitter()
+    )
+
+    # Rotating output drum (R=30.5, t in [-19.0,+9.2]) + tapered cheeks (t<=+9.2) + forearm socket (d in [34.0,48.0])
+    out_drum = Part.makeCylinder(30.5, 28.2, V(0.0, 0.0, -19.0), V(0.0, 0.0, 1.0))
+    out_cheek = Part.makeBox(40.0, 34.0, 22.2, V(0.0, -17.0, -13.0))
+    out_sock = Part.makeCylinder(19.0, 14.0, V(34.0, 0.0, 0.0), V(1.0, 0.0, 0.0))
+    el_output = xo(out_drum.fuse(out_cheek).fuse(out_sock).removeSplitter())
+
+    ov_el = (
+        el_clevis.common(el_stator).Volume
+        + el_clevis.common(el_collar).Volume
+        + el_clevis.common(el_output).Volume
+        + el_stator.common(el_collar).Volume
+        + el_stator.common(el_output).Volume
+        + el_collar.common(el_output).Volume
+    )
+    assert ov_el < 0.1, f"Elbow joint internal overlap {ov_el:.2f} mm^3"
+    return el_clevis, el_stator, el_collar, el_output
+
+
+def make_cardan_roll_wrist(wrist_pos, forearm_dir, u_reach, u_rad, u_tan, clevis_ur, clevis_ut):
+    """Build compact intersecting 3-DOF Hollow-Shaft Cardan-Roll wrist (CSD-14-2A + TBM2G-05008) + ATI Mini45 F/T wafer.
+
+    Wrist axes q3 (pitch along clevis_ut), q4 (yaw along u_rad), and q5 (roll along u_reach) intersect at wrist_pos.
+    """
+    R_w = App.Rotation(u_reach, u_rad, u_tan, "XYZ")
+    T_w = App.Placement(wrist_pos, R_w)
+
+    def xw(sh):
+        s = sh.copy()
+        s.Placement = T_w.multiply(s.Placement)
+        return s
+
+    R_f = App.Rotation(forearm_dir, clevis_ur, clevis_ut, "XYZ")
+    T_f = App.Placement(wrist_pos, R_f)
+
+    def xf(sh):
+        s = sh.copy()
+        s.Placement = T_f.multiply(s.Placement)
+        return s
+
+    # 0. Forearm clevis fork (from x_f = -32.0 to W; -t bearing ear on clevis_ut, clears CardanYoke & q4)
+    clevis_base = Part.makeBox(5.4, 28.0, 56.0, V(-34.0, -14.0, -24.0))
+    ear_arm = Part.makeBox(30.0, 28.0, 5.8, V(-30.0, -14.0, -24.0))
+    ear_cap = Part.makeCylinder(14.0, 5.8, V(0.0, 0.0, -24.0), V(0.0, 0.0, 1.0))
+    fore_clevis = xf(clevis_base.fuse(ear_arm).fuse(ear_cap).removeSplitter())
+
+    # 1. q3 Pitch Drive Drum (CSD-14 + TBM2G-05008 + brake, R = 28.5 mm, t in [+18, +56] mm)
+    q3_drum = xw(Part.makeCylinder(28.5, 38.0, V(0.0, 0.0, 18.0), V(0.0, 0.0, 1.0)))
+
+    # 2. Inner Cardan Yoke spider linking q3 axis to q4 axis (x in [-13, +13], r in [-29.5, +10], t in [-17, +17])
+    q3_pin = Part.makeCylinder(10.0, 35.0, V(0.0, 0.0, -17.5), V(0.0, 0.0, 1.0))
+    spider = Part.makeBox(26.0, 39.5, 34.0, V(-13.0, -29.5, -17.0))
+    cardan_yoke = xw(q3_pin.fuse(spider).removeSplitter())
+
+    # 3. q4 Yaw Drive Drum (R = 28.5 mm, r in [-68, -30] mm) + output bridge to q5 (x in [22, 29.8])
+    q4_cyl = Part.makeCylinder(28.5, 38.0, V(0.0, -68.0, 0.0), V(0.0, 1.0, 0.0))
+    q4_bridge = Part.makeBox(7.8, 44.0, 28.0, V(22.0, -44.0, -14.0))
+    q4_drum = xw(q4_cyl.fuse(q4_bridge).removeSplitter())
+
+    # 4. q5 Pancake Roll Drive (R = 28.5 mm, x in [30, 62] mm) + Amber Roll Collar + ATI Mini45 F/T wafer (x in [62.2, 77.9])
+    q5_drum = xw(Part.makeCylinder(28.5, 32.0, V(30.0, 0.0, 0.0), V(1.0, 0.0, 0.0)))
+    q5_collar = xw(
+        Part.makeCylinder(30.0, 6.0, V(54.0, 0.0, 0.0), V(1.0, 0.0, 0.0)).cut(
+            Part.makeCylinder(28.6, 8.0, V(53.0, 0.0, 0.0), V(1.0, 0.0, 0.0))
+        )
+    )
+    ft_wafer = xw(Part.makeCylinder(22.5, 15.7, V(62.2, 0.0, 0.0), V(1.0, 0.0, 0.0)))
+
+    ov_int = (
+        q3_drum.common(cardan_yoke).Volume
+        + q3_drum.common(q4_drum).Volume
+        + q3_drum.common(q5_drum).Volume
+        + cardan_yoke.common(q4_drum).Volume
+        + cardan_yoke.common(q5_drum).Volume
+        + q4_drum.common(q5_drum).Volume
+        + q5_drum.common(ft_wafer).Volume
+    )
+    assert ov_int < 0.1, f"Cardan-Roll wrist internal overlap {ov_int:.2f} mm^3"
+    return fore_clevis, q3_drum, cardan_yoke, q4_drum, q5_drum, q5_collar, ft_wafer
+
+
+def make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=-1.0, in_open=0.0, hook_open=0.0):
+    """Build servicer_rev2 v3-inspired form-closure Marman ring tool + stereo bar mounted past ATI Mini45 F/T wafer.
 
     Gripper frame: +X = approach (u_reach), +Y = radially outward (u_rad), +Z = ring tangent (u_tan).
-    Palm datum rests flush at X = PALM_X (74.0 mm); fingers reach +38 mm past palm (to X = 112.0 mm).
+    Mounts at X = 78.0 mm; palm datum rests flush at X = PALM_X (128.0 mm); fingers reach +38 mm past palm (to X = 166.0 mm).
+    Supports radial jaw opening strokes (in_open, hook_open up to 18.0 mm) along extended twin rails & lead screws.
     """
     R = App.Rotation(u_reach, u_rad, u_tan, "XYZ")
     T = App.Placement(wrist_pos, R)
@@ -206,67 +373,71 @@ def make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=-1.0):
         s.Placement = T.multiply(s.Placement)
         return s
 
-    # 1. 14 mm passive Ti-6Al-4V tangential flexure collar (+-5 deg hard-stopped wrist compliance)
-    flex_collar = Part.makeCylinder(19.0, 14.0, V(0.0, 0.0, 0.0), V(1.0, 0.0, 0.0))
-
-    # 2. Structural base housing: back actuator box + central neck + palm datum + knitted Inconel pad
-    back_box = Part.makeBox(22.0, 84.0, 52.0, V(14.0, -40.0, -26.0))
-    neck = Part.makeBox(26.0, 28.0, 44.0, V(36.0, -14.0, -22.0))
-    palm_plate = Part.makeBox(9.5, 34.0, 52.0, V(62.0, -17.0, -26.0))
-    palm_pad = Part.makeBox(2.3, 26.0, 44.0, V(71.5, -16.0, -22.0))  # stops at X=73.8 (0.2 mm off 74.0 ring datum)
+    # 1. Structural base housing: extended back actuator box (78..90, Y in [-52,+54]) + neck + palm datum (116..127.8)
+    back_box = Part.makeBox(12.0, 106.0, 52.0, V(78.0, -52.0, -26.0))
+    neck = Part.makeBox(26.0, 28.0, 44.0, V(90.0, -14.0, -22.0))
+    palm_plate = Part.makeBox(9.5, 35.0, 52.0, V(116.0, -16.5, -26.0))
+    palm_pad = Part.makeBox(2.3, 33.0, 44.0, V(125.5, -15.5, -22.0))  # stops at X=127.8 (0.2 mm off 128.0 ring datum)
     housing = back_box.fuse(neck).fuse(palm_plate).fuse(palm_pad).removeSplitter()
 
-    # 3. Twin linear guide rails + bearing end stops + non-backdrivable lead screws
-    rail_in = Part.makeBox(5.0, 25.0, 14.0, V(36.0, -39.0, -7.0))
-    rail_hook = Part.makeBox(5.0, 29.0, 14.0, V(36.0, 14.0, -7.0))
-    stop_in = Part.makeBox(12.0, 4.0, 16.0, V(36.0, -43.0, -8.0))
-    stop_hook = Part.makeBox(12.0, 4.0, 16.0, V(36.0, 43.0, -8.0))
-    screw_in = Part.makeCylinder(2.8, 25.0, V(51.0, -39.0, 0.0), V(0.0, 1.0, 0.0))
-    screw_hook = Part.makeCylinder(2.8, 29.0, V(51.0, 14.0, 0.0), V(0.0, 1.0, 0.0))
+    # 2. Extended twin purely radial linear guide rails + bearing end stops + non-backdrivable lead screws (18 mm stroke)
+    rail_in = Part.makeBox(5.0, 34.5, 14.0, V(90.0, -48.5, -7.0))
+    rail_hook = Part.makeBox(5.0, 36.5, 14.0, V(90.0, 14.0, -7.0))
+    stop_in = Part.makeBox(22.0, 3.5, 16.0, V(90.0, -52.0, -8.0))
+    stop_hook = Part.makeBox(22.0, 3.5, 16.0, V(90.0, 50.5, -8.0))
+    screw_in = Part.makeCylinder(2.8, 34.5, V(105.0, -48.5, 0.0), V(0.0, 1.0, 0.0))
+    screw_hook = Part.makeCylinder(2.8, 36.5, V(105.0, 14.0, 0.0), V(0.0, 1.0, 0.0))
     rails = rail_in.fuse(rail_hook).fuse(stop_in).fuse(stop_hook).fuse(screw_in).fuse(screw_hook).removeSplitter()
 
-    # 4a. Inboard jaw carriage + crowned multi-diameter finger (clears 8" r_in=83.6 mm through 37")
-    car_in = Part.makeBox(20.6, 20.2, 44.0, V(41.2, -39.0, -22.0))
+    # 3a. Inboard jaw carriage (12 mm tall) + crowned multi-diameter finger; translates -in_open along Y
+    car_in = Part.makeBox(21.0, 12.0, 44.0, V(95.2, -30.0, -22.0))
     crown_face = Part.Face(Part.makePolygon([
-        V(0.0, -30.0, -22.0), V(0.0, -23.2, -22.0),
+        V(0.0, -28.0, -22.0), V(0.0, -23.2, -22.0),
         V(0.0, -18.8, -9.0), V(0.0, -18.8, +9.0),
-        V(0.0, -23.2, +22.0), V(0.0, -30.0, +22.0),
-        V(0.0, -30.0, -22.0),
+        V(0.0, -23.2, +22.0), V(0.0, -28.0, +22.0),
+        V(0.0, -28.0, -22.0),
     ]))
     finger_in = crown_face.extrude(V(50.0, 0.0, 0.0))
-    finger_in.Placement = App.Placement(V(62.0, 0.0, 0.0), App.Rotation())
+    finger_in.Placement = App.Placement(V(116.0, 0.0, 0.0), App.Rotation())
     cham_in = Part.makeBox(10.0, 10.0, 60.0, V(-5.0, -5.0, -30.0))
     cham_in.rotate(V(0, 0, 0), V(0, 0, 1), 45.0)
-    cham_in.translate(V(112.0, -18.5, 0.0))
-    jaw_in = car_in.fuse(finger_in).cut(Part.makeCylinder(3.2, 24.0, V(51.0, -40.0, 0.0), V(0, 1, 0))).cut(cham_in).removeSplitter()
+    cham_in.translate(V(166.0, -18.5, 0.0))
+    jaw_in = car_in.fuse(finger_in).cut(Part.makeCylinder(3.2, 32.0, V(105.0, -32.0, 0.0), V(0, 1, 0))).cut(cham_in).removeSplitter()
+    if in_open:
+        jaw_in.translate(V(0.0, -in_open, 0.0))
 
-    # 4b. Outboard hook carriage + finger over lip + 20 deg Marman wedge hook locked behind 14 mm lip
-    car_hook = Part.makeBox(20.6, 22.2, 44.0, V(41.2, 19.8, -22.0))
-    finger_hook = Part.makeBox(50.0, 9.5, 44.0, V(62.0, 20.0, -22.0))
+    # 3b. Outboard hook carriage (12 mm tall) + finger over lip + 20 deg Marman wedge hook; translates +hook_open along Y
+    car_hook = Part.makeBox(21.0, 12.0, 44.0, V(95.2, 20.0, -22.0))
+    finger_hook = Part.makeBox(50.0, 8.5, 44.0, V(116.0, 20.0, -22.0))
     wedge_prof = Part.Face(Part.makePolygon([
-        V(88.5, 20.5, -22.0), V(88.5, 18.0, -22.0),
-        V(91.5, 10.5, -22.0), V(104.0, 10.5, -22.0),
-        V(108.0, 20.5, -22.0), V(88.5, 20.5, -22.0),
+        V(142.5, 20.5, -22.0), V(142.5, 18.0, -22.0),
+        V(145.5, 10.5, -22.0), V(158.0, 10.5, -22.0),
+        V(162.0, 20.5, -22.0), V(142.5, 20.5, -22.0),
     ]))
     wedge_hook = wedge_prof.extrude(V(0.0, 0.0, 44.0))
     cham_hook = Part.makeBox(10.0, 10.0, 60.0, V(-5.0, -5.0, -30.0))
     cham_hook.rotate(V(0, 0, 0), V(0, 0, 1), 45.0)
-    cham_hook.translate(V(112.0, 20.0, 0.0))
+    cham_hook.translate(V(166.0, 20.0, 0.0))
     jaw_hook = car_hook.fuse(finger_hook).fuse(wedge_hook).cut(
-        Part.makeCylinder(3.2, 26.0, V(51.0, 18.0, 0.0), V(0, 1, 0))
+        Part.makeCylinder(3.2, 16.0, V(105.0, 18.0, 0.0), V(0, 1, 0))
     ).cut(cham_hook).removeSplitter()
+    if hook_open:
+        jaw_hook.translate(V(0.0, +hook_open, 0.0))
 
     jaws = jaw_in.fuse(jaw_hook).removeSplitter()
+    ov_jaws = jaws.common(housing).Volume + jaws.common(rails).Volume
+    assert ov_jaws < 0.1, f"Gripper jaw vs housing/rail overlap {ov_jaws:.2f} mm^3"
 
-    # 5. Outboard 50 mm dual stereo camera bar bolted cleanly onto back housing face
+    # 4. Outboard 50 mm dual stereo camera bar + central LED lamp on -u_tan face (clears q3 on +u_tan)
     z_min = 26.0 if cam_side > 0 else -48.0
     z_ctr = 37.0 if cam_side > 0 else -37.0
-    cam_bar = Part.makeBox(24.0, 62.0, 22.0, V(14.0, -31.0, z_min))
-    lens_a = Part.makeCylinder(7.0, 8.0, V(38.0, -25.0, z_ctr), V(1, 0, 0))
-    lens_b = Part.makeCylinder(7.0, 8.0, V(38.0, 25.0, z_ctr), V(1, 0, 0))
-    lenses = lens_a.fuse(lens_b).removeSplitter()
+    cam_bar = Part.makeBox(22.0, 62.0, 22.0, V(78.0, -31.0, z_min))
+    lens_a = Part.makeCylinder(7.0, 6.0, V(100.0, -25.0, z_ctr), V(1, 0, 0))
+    lens_b = Part.makeCylinder(7.0, 6.0, V(100.0, 25.0, z_ctr), V(1, 0, 0))
+    lamp = Part.makeBox(4.0, 14.0, 14.0, V(100.0, -7.0, z_ctr - 7.0))
+    lenses = lens_a.fuse(lens_b).fuse(lamp).removeSplitter()
 
-    return xform(flex_collar), xform(housing), xform(rails), xform(jaws), xform(cam_bar), xform(lenses)
+    return xform(housing), xform(rails), xform(jaws), xform(cam_bar), xform(lenses)
 
 
 def solve_arm_base_roll(base_pos, target_center_yz, ring_r, ring_x, L1_len, L2_len):
@@ -311,21 +482,53 @@ def solve_arm_base_roll(base_pos, target_center_yz, ring_r, ring_x, L1_len, L2_l
 
 def build_arm_assembly(
     doc, group, prefix, base_pos, elbow_pos, wrist_pos,
-    u_reach, u_rad, u_tan, clevis_ur, clevis_ut, cam_side=-1.0
+    u_reach, u_rad, u_tan, clevis_ur, clevis_ut, cam_side=-1.0, in_open=0.0, hook_open=0.0
 ):
     objs = []
     turntable, roll_ring = make_clevis_yoke(base_pos.y, base_pos.z, clevis_ur, clevis_ut)
     objs.append(add_part(doc, group, f"{prefix}_TurntableClevis", turntable, TITANIUM))
     objs.append(add_part(doc, group, f"{prefix}_RollCollar", roll_ring, ROLL_AMBER))
 
-    objs.append(add_part(doc, group, f"{prefix}_ShoulderJoint", make_axis_joint(base_pos, clevis_ut, 30.0, 54.0), TITANIUM))
-    objs.append(add_part(doc, group, f"{prefix}_UpperLink", make_cylinder_between(base_pos, elbow_pos, 18.0), CARBON))
-    objs.append(add_part(doc, group, f"{prefix}_ElbowJoint", make_axis_joint(elbow_pos, clevis_ut, 26.0, 50.0), TITANIUM))
-    objs.append(add_part(doc, group, f"{prefix}_ForearmLink", make_cylinder_between(elbow_pos, wrist_pos, 15.0), CARBON))
-    objs.append(add_part(doc, group, f"{prefix}_WristPitchJoint", make_axis_joint(wrist_pos, clevis_ut, 20.0, 42.0), TITANIUM))
+    upper_dir = elbow_pos.sub(base_pos).normalize()
+    forearm_dir = wrist_pos.sub(elbow_pos).normalize()
 
-    flx, h, rl, j, cb, ls = make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=cam_side)
-    objs.append(add_part(doc, group, f"{prefix}_PassiveFlexCollar", flx, FLEX_TEAL))
+    sh_st, sh_col, sh_out = make_shoulder_joint(base_pos, upper_dir, clevis_ur, clevis_ut)
+    ov_turntable = (
+        turntable.common(sh_st).Volume
+        + turntable.common(sh_col).Volume
+        + turntable.common(sh_out).Volume
+    )
+    assert ov_turntable < 0.1, f"{prefix} clevis vs shoulder overlap {ov_turntable:.2f} mm^3"
+    objs.append(add_part(doc, group, f"{prefix}_ShoulderStator", sh_st, TITANIUM))
+    objs.append(add_part(doc, group, f"{prefix}_ShoulderRollCollar", sh_col, ROLL_AMBER))
+    objs.append(add_part(doc, group, f"{prefix}_ShoulderOutput", sh_out, METAL))
+
+    p_up0 = base_pos + upper_dir * 54.2
+    p_up1 = elbow_pos - upper_dir * 52.2
+    objs.append(add_part(doc, group, f"{prefix}_UpperLink", make_cylinder_between(p_up0, p_up1, 18.0), CARBON))
+
+    el_clv, el_st, el_col, el_out = make_elbow_joint(elbow_pos, upper_dir, forearm_dir, clevis_ut)
+    objs.append(add_part(doc, group, f"{prefix}_ElbowClevis", el_clv, TITANIUM))
+    objs.append(add_part(doc, group, f"{prefix}_ElbowStator", el_st, TITANIUM))
+    objs.append(add_part(doc, group, f"{prefix}_ElbowRollCollar", el_col, ROLL_AMBER))
+    objs.append(add_part(doc, group, f"{prefix}_ElbowOutput", el_out, METAL))
+
+    p_fore0 = elbow_pos + forearm_dir * 48.2
+    p_fore_end = wrist_pos - forearm_dir * 34.2
+    objs.append(add_part(doc, group, f"{prefix}_ForearmLink", make_cylinder_between(p_fore0, p_fore_end, 15.0), CARBON))
+
+    fclv, q3d, cyoke, q4d, q5d, q5c, ftw = make_cardan_roll_wrist(
+        wrist_pos, forearm_dir, u_reach, u_rad, u_tan, clevis_ur, clevis_ut
+    )
+    objs.append(add_part(doc, group, f"{prefix}_ForearmClevis", fclv, TITANIUM))
+    objs.append(add_part(doc, group, f"{prefix}_WristPitch_q3", q3d, TITANIUM))
+    objs.append(add_part(doc, group, f"{prefix}_WristCardanYoke", cyoke, METAL))
+    objs.append(add_part(doc, group, f"{prefix}_WristYaw_q4", q4d, TITANIUM))
+    objs.append(add_part(doc, group, f"{prefix}_WristRoll_q5", q5d, TITANIUM))
+    objs.append(add_part(doc, group, f"{prefix}_WristRollCollar", q5c, ROLL_AMBER))
+    objs.append(add_part(doc, group, f"{prefix}_FTWafer_Mini45", ftw, FLEX_TEAL))
+
+    h, rl, j, cb, ls = make_gripper_parts(wrist_pos, u_reach, u_rad, u_tan, cam_side=cam_side, in_open=in_open, hook_open=hook_open)
     objs.append(add_part(doc, group, f"{prefix}_Gripper", h, METAL))
     objs.append(add_part(doc, group, f"{prefix}_GripperRails", rl, TITANIUM))
     objs.append(add_part(doc, group, f"{prefix}_GripperJaws", j, JAW_ORANGE))
@@ -414,6 +617,7 @@ def build():
     g_t37 = doc.addObject("App::DocumentObjectGroup", "Target_Ring_37in_940mm")
     g_doff = doc.addObject("App::DocumentObjectGroup", "Arms_Deployed_24in_LargeOff")
     g_toff = doc.addObject("App::DocumentObjectGroup", "Target_Ring_24in_LargeOff")
+    g_open = doc.addObject("App::DocumentObjectGroup", "Gripper_Open_24in_Approach")
 
     # 1. Core expanded chamfered bus shell (640 X x 600 Y x 910 Z mm)
     shell = chamfered_box(HX, HY, HZ, CH)
@@ -483,9 +687,9 @@ def build():
         fixed_drive_shapes.append(liner)
 
     # 2x EBAD NEA 9102 Non-Pyro Launch Lock HDRMs + cup-cone cradles inside cavities (X = 185.5..245)
-    # Placed behind distal forearm (Arm 1 wrist @ -265 -> hold at -215; Arm 2 wrist @ +265 -> hold at +215)
+    # Placed behind distal ForearmLink (Arm 1 Z=-145, Arm 2 Z=+145 -> clears q4 drums at Z=+-231 & +5 mm clear of ForearmLink)
     hdrm_shapes = []
-    for tag_arm, cy_h, cz_h in (("Arm1", CAV_Y, -215.0), ("Arm2", -CAV_Y, +215.0)):
+    for tag_arm, cy_h, cz_h in (("Arm1", CAV_Y, -145.0), ("Arm2", -CAV_Y, +145.0)):
         nut = Part.makeCylinder(21.6, 39.4, V(185.6, cy_h, cz_h), V(1, 0, 0))
         cradle = Part.makeCone(24.0, 14.0, 20.0, V(225.0, cy_h, cz_h), V(1, 0, 0))
         add_part(doc, g_bus, f"HDRM_NEA9102_{tag_arm}", nut, HDRM_RED)
@@ -564,7 +768,7 @@ def build():
     add_part(doc, g_slice, "Slice_FixedBaseRoll_Arm1_Flange", Part.makeCylinder(50.0, 4.0, V(181.0, CAV_Y, ARM_MOUNT_Z), V(1, 0, 0)).common(slice_half), TITANIUM)
     add_part(doc, g_slice, "Slice_FixedBaseRoll_Arm1_Drive", Part.makeCylinder(44.0, 62.0, V(119.0, CAV_Y, ARM_MOUNT_Z), V(1, 0, 0)).common(slice_half), DARK)
     add_part(doc, g_slice, "Slice_FixedBaseRoll_Arm1_Encoder", Part.makeCylinder(36.0, 10.0, V(109.0, CAV_Y, ARM_MOUNT_Z), V(1, 0, 0)).common(slice_half), ROLL_AMBER)
-    add_part(doc, g_slice, "Slice_HDRM_NEA9102_Arm1", Part.makeCylinder(21.6, 39.4, V(185.6, CAV_Y, -215.0), V(1, 0, 0)).common(slice_half), HDRM_RED)
+    add_part(doc, g_slice, "Slice_HDRM_NEA9102_Arm1", Part.makeCylinder(21.6, 39.4, V(185.6, CAV_Y, -145.0), V(1, 0, 0)).common(slice_half), HDRM_RED)
     add_part(doc, g_slice, "Slice_SepRing", sep_ring.common(slice_half), METAL)
 
     # 6. Bus_Internal_Ref (COPV tank, 65 deg 4x RW-12 pyramid, avionics stack; must clear drives, sensors & shell)
@@ -631,12 +835,32 @@ def build():
     build_deployed_ring_scenario(doc, g_d37, g_t37, obstacle, "37in", R_37IN, b1, b2, RING_X_37, (0.0, 0.0), add_geo_nozzle=True)
     build_deployed_ring_scenario(doc, g_doff, g_toff, obstacle, "24inLargeOff", R_24IN, b1, b2, RING_X, (80.0, -50.0))
 
+    # 9b. Gripper_Open_24in_Approach (arms 22 mm short of ring_x=800 with +-18 mm open jaws approaching Target_Ring_24in_610mm)
+    app_x = RING_X - 22.0
+    e1_o, w1_o, ur1_o, ut1_o, ang1_o, d1_o = solve_arm_base_roll(b1, (0.0, 0.0), R_24IN, app_x, L1, L2)
+    e2_o, w2_o, ur2_o, ut2_o, ang2_o, d2_o = solve_arm_base_roll(b2, (0.0, 0.0), R_24IN, app_x, L1, L2)
+    o1_objs = build_arm_assembly(
+        doc, g_open, "Open24in_Arm1", b1, e1_o, w1_o,
+        V(1.0, 0.0, 0.0), ur1_o, ut1_o, ur1_o, ut1_o, cam_side=-1.0, in_open=18.0, hook_open=18.0
+    )
+    o2_objs = build_arm_assembly(
+        doc, g_open, "Open24in_Arm2", b2, e2_o, w2_o,
+        V(1.0, 0.0, 0.0), ur2_o, ut2_o, ur2_o, ut2_o, cam_side=-1.0, in_open=18.0, hook_open=18.0
+    )
+    t24_shapes = [o.Shape for o in g_t24.Group if not o.Name.startswith("ClientStub_")]
+    t24_comp = Part.makeCompound(t24_shapes)
+    o1_comp = Part.makeCompound([o.Shape for o in o1_objs])
+    o2_comp = Part.makeCompound([o.Shape for o in o2_objs])
+    ov_open = o1_comp.common(obstacle).Volume + o2_comp.common(obstacle).Volume + o1_comp.common(t24_comp).Volume + o2_comp.common(t24_comp).Volume + o1_comp.common(o2_comp).Volume
+    assert ov_open < 0.1, f"Open24in approach overlap {ov_open:.2f} mm^3"
+    print(f"[Open24in_Approach] X_palm={app_x:.0f}mm (22 mm off ring) | in_open=18.0 hook_open=18.0 | reach={d1_o:.1f}/{L1+L2:.0f}mm | ov_all={ov_open:.2f}")
+
     # Default clean view visibility: Bus + ESPA box + 24in deployed (+ 350 mm GEO nozzle ref)
     for grp, vis in (
         (g_bus, True), (g_slice, False), (g_int, False), (g_espa, True),
         (g_stow, False), (g_d24, True), (g_t24, True),
         (g_d15, False), (g_t15, False), (g_d8, False), (g_t8, False),
-        (g_d37, False), (g_t37, False), (g_doff, False), (g_toff, False),
+        (g_d37, False), (g_t37, False), (g_doff, False), (g_toff, False), (g_open, False),
     ):
         set_group_visible(grp, vis)
 

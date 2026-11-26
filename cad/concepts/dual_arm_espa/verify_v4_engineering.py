@@ -244,7 +244,7 @@ def main():
         ("Avionics (OBC/Jetson-class/PCDU/Comms)",              13.8, 1.15, 230.0),
         ("Harness (bus + dual q0 flex loops)",                  9.5,  1.20, 340.0),
         ("2x Base-Roll q0 drives (CSD-20/TBM2G, 1.4kg ea)",     2.8,  1.20, 495.0),
-        ("2x Arms q1-q3 + CFRP + passive Ti jaw + stereo",      11.6, 1.20, 610.0),
+        ("2x 6-DOF Arms q1-q5 (CSD-14/TBM2G) + Mini45 F/T + jaws + stereo", 13.8, 1.20, 610.0),
         ("2x Launch-lock HDRMs (NEA 9102 + cup-cones)",         1.6,  1.20, 620.0),
     ]
     tot_base = sum(b for _, b, _, _ in mass_items)
@@ -257,7 +257,7 @@ def main():
     print("\n[CHECK 5] MASS, SYMMETRIC ESPA ENVELOPE, CG & 15g LAUNCH LOADS")
     print(f"  Base Mass = {tot_base:.1f} kg | Spec-MGA = {tot_spec:.1f} kg | Flat-20% MGA = {tot_20:.1f} kg")
     print(f"  CG from aft port face = {cg_x_port:.1f} mm (bus-frame X = {cg_bus_frame:+.1f} mm) <= 508.0 mm")
-    per_arm_15g = 6.5 * 15.0 * 9.81
+    per_arm_15g = 7.5 * 15.0 * 9.81
     fos_hdrm = 17800.0 / (per_arm_15g * 1.5)
     print(f"  15g per-arm load = {per_arm_15g:.0f} N -> NEA 9102 (17.8 kN) FoS = {fos_hdrm:.1f}x")
     assert tot_spec <= 200.0 and tot_20 <= 220.0, "Exceeded mass cap"
@@ -383,9 +383,9 @@ def main():
     print("  -> PASS: 100% plume-free wheels-only detumble at 2 deg/s (< 80% wheel fill) + 20.3 Nms roll-sync capacity")
 
     # -----------------------------------------------------------------------
-    # CHECK 6: Compact v4.1 Kinematics (PALM_X=74.0), GEO Nozzle & Sensor FoV
+    # CHECK 6: Compact v4.2 Kinematics (PALM_X=128.0), GEO Nozzle & Sensor FoV
     # -----------------------------------------------------------------------
-    L1, L2, PALM_X = 275.0, 235.0, 74.0
+    L1, L2, PALM_X = 248.0, 208.0, 128.0
     b1 = (265.0, +70.0, +245.0)
     b2 = (265.0, -70.0, -245.0)
 
@@ -405,14 +405,14 @@ def main():
         e = (b[0] + L1 * math.cos(q1), b[1] + L1 * math.sin(q1) * ur[1], b[2] + L1 * math.sin(q1) * ur[2])
         return q0, math.degrees(q1), math.degrees(q2), math.degrees(-(q1 + q2)), d, (L1 + L2) - d, e, w
 
-    print("\n[CHECK 6] COMPACT v4.1 KINEMATICS, GEO NOZZLE & RECESSED SENSOR FoV (L1=275, L2=235, PALM_X=74 mm)")
+    print("\n[CHECK 6] COMPACT v4.2 KINEMATICS, GEO NOZZLE & RECESSED SENSOR FoV (L1=248, L2=208, PALM_X=128 mm)")
     sensors = [("cam_40deg", (332.0, 222.0, -75.0), 20.0), ("lidar_45deg", (332.0, 222.0, 5.0), 22.5)]
     cases = [
         ("24in_480mm",    304.8, 800.0, 0.0, 0.0),
         ("24in_GEO_500",  304.8, 820.0, 0.0, 0.0),
         ("15in_480mm",    190.5, 800.0, 0.0, 0.0),
         ("8in_480mm",     101.6, 800.0, 0.0, 0.0),
-        ("37in_455mm",    469.9, 775.0, 0.0, 0.0),
+        ("37in_450mm",    469.9, 770.0, 0.0, 0.0),
         ("24in_LargeOff", 304.8, 800.0, 80.0, -50.0),
     ]
     for tag, rr, rx, cy, cz in cases:
@@ -435,7 +435,7 @@ def main():
                 ma = min(ma, max(math.degrees(math.atan2(vy, vx)), math.degrees(math.atan2(vz, vx))))
             fov_res.append(f"{sname}:{ma:.1f}deg({'OK' if ma>=hf else 'OCCL'})")
         print(
-            f"  {tag:14s}: A1 q=({a1[0]:+.1f},{a1[1]:+.1f},{a1[2]:+.1f},{a1[3]:+.1f}) d={a1[4]:.1f}/510 "
+            f"  {tag:14s}: A1 q=({a1[0]:+.1f},{a1[1]:+.1f},{a1[2]:+.1f},{a1[3]:+.1f}) d={a1[4]:.1f}/{L1+L2:.0f} "
             f"(+{a1[5]:.1f}mm) | A2 q0={a2[0]:+.1f} (+{a2[5]:.1f}mm) | {' '.join(fov_res)}"
         )
 
@@ -453,7 +453,7 @@ def main():
     print(f"  Recessed Star Trackers (20 deg outward): Ymax={st_ymax:.1f}<=305, Zmax={st_zmax:.1f}<=482.5, +Y sun clear={90-20:.0f}>=34 deg")
     assert st_ymax <= 305.0 and st_zmax <= 482.5, "Star tracker exceeds ESPA!"
     print("  -> PASS: All targets reachable at 480-500mm standoff (+130-150mm GEO nozzle gap, 0.0 deg roll err, FoV & ST clear)")
-    print("\nALL v4.1 ENGINEERING VERIFICATION CHECKS PASSED.")
+    print("\nALL v4.2 ENGINEERING VERIFICATION CHECKS PASSED.")
 
 
 if __name__ == "__main__":
